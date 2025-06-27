@@ -9,13 +9,16 @@ use DateInterval;
 class BanManager
 {
     private SessionInterface $session;
-    private string $key = 'xorg_geolocator_bans';
+    private string $key = 'geolocator_bans';
 
     public function __construct(SessionInterface $session)
     {
         $this->session = $session;
     }
 
+    /**
+     * @throws \Exception
+     */
     public function addBan(string $ip, string $reason, string $duration): void
     {
         $bans = $this->session->get($this->key, []);
@@ -24,6 +27,9 @@ class BanManager
         $this->session->set($this->key, $bans);
     }
 
+    /**
+     * @throws \Exception
+     */
     public function isBanned(string $ip): bool
     {
         $bans = $this->session->get($this->key, []);

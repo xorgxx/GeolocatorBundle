@@ -19,7 +19,7 @@ class GeolocatorExtension extends Extension
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
-        $container->setParameter('xorg_geolocator.config', $config);
+        $container->setParameter('geolocator.config', $config);
 
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yaml');

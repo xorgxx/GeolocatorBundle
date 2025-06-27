@@ -34,8 +34,8 @@ framework:
   cache:
     app: cache.adapter.filesystem  # Cache sur filesystem
 
-# config/packages/xorg_geolocator.yaml
-xorg_geolocator:
+# config/packages/geolocator.yaml
+geolocator:
   enabled: true
   redis_enabled: false      # Désactive Redis (utilise filesystem)
   rabbit_enabled: false     # Désactive RabbitMQ (mode synchrone)
@@ -51,7 +51,7 @@ xorg_geolocator:
 #### Activer Redis ou RabbitMQ
 ```yaml
 # Pour Redis
-xorg_geolocator:
+geolocator:
   redis_enabled: true
 
 framework:
@@ -59,7 +59,7 @@ framework:
     app: cache.adapter.redis
 
 # Pour RabbitMQ (mode async)
-xorg_geolocator:
+geolocator:
   rabbit_enabled: true
 
 framework:

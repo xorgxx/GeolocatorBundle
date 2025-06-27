@@ -9,7 +9,7 @@ class Configuration implements ConfigurationInterface
 {
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        $treeBuilder = new TreeBuilder('xorg_geolocator');
+        $treeBuilder = new TreeBuilder('geolocator');
         $rootNode = $treeBuilder->getRootNode();
 
         $rootNode

@@ -1,4 +1,4 @@
-xorg_geolocator:
+geolocator:
   enabled: true
   redis_enabled: false      # false: mode simple (filesystem cache), true: utilise Redis pour cache
   rabbit_enabled: false     # false: mode synchrone, true: utilise RabbitMQ via Messenger

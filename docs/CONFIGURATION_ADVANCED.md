@@ -11,7 +11,7 @@ framework:
   cache:
     app: cache.adapter.redis
 
-xorg_geolocator:
+geolocator:
   redis_enabled: true
   cache_pool: 'cache.app'
 ```
@@ -28,7 +28,7 @@ framework:
     routing:
       'GeolocatorBundle\Message\GeolocateMessage': geolocator
 
-xorg_geolocator:
+geolocator:
   rabbit_enabled: true
   messenger_transport: 'geolocator'
 ```

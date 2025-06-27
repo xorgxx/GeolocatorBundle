@@ -27,7 +27,7 @@ See [docs/INSTALLATION_EN.md](docs/INSTALLATION_EN.md)
 
 - `.env` / `.env.local`
 - `config/packages/framework.yaml`
-- `config/packages/xorg_geolocator.yaml`
+- `config/packages/geolocator.yaml`
 
 ### Services & Components
 
