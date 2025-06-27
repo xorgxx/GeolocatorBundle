@@ -1,9 +1,9 @@
 {
-  "name": "geolocator-bundle",
-  "description": "Bundle de filtrage d\u2019acc\u00e8s bas\u00e9 sur la g\u00e9olocalisation IP",
+  "name": "xorgxx/geolocator-bundle",
+  "description": "Bundle de filtrage d'accés basé sur la géolocalisation IP",
   "type": "symfony-bundle",
   "require": {
-    "php": ">=8.3",
+    "php": ">=8.2",
     "symfony/framework-bundle": "7.3.*"
   },
   "autoload": {
