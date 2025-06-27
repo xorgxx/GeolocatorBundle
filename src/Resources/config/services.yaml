@@ -1,40 +1,40 @@
 services:
-    Xorg\GeolocatorBundle\:
+    GeolocatorBundle\:
         resource: '../../*'
         exclude: '../../{DependencyInjection,Tests}'
-    Xorg\GeolocatorBundle\Provider\:
+    GeolocatorBundle\Provider\:
         resource: '../../Provider'
-    Xorg\GeolocatorBundle\Service\:
+    GeolocatorBundle\Service\:
         resource: '../../Service'
-    Xorg\GeolocatorBundle\EventListener\:
+    GeolocatorBundle\EventListener\:
         resource: '../../EventListener'
         tags:
             - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest }
-    Xorg\GeolocatorBundle\Export\:
+    GeolocatorBundle\Export\:
         resource: '../../Export'
-    Xorg\GeolocatorBundle\Command\:
+    GeolocatorBundle\Command\:
         resource: '../../Command'
         tags: ['console.command']
 
 
     # Service to resolve client IP considering trusted proxies
-    Xorg\GeolocatorBundle\Service\IpResolver:
+    GeolocatorBundle\Service\IpResolver:
         arguments:
             $trustedProxiesCsv: '%env(TRUSTED_PROXIES)%'
 
 
     # PSR-6 Cache for Geolocation
-    Xorg\GeolocatorBundle\Service\GeolocationCache:
+    GeolocatorBundle\Service\GeolocationCache:
         arguments:
             $cachePool: '@cache.app'
-            $providerManager: '@Xorg\GeolocatorBundle\Service\ProviderManager'
+            $providerManager: '@GeolocatorBundle\Service\ProviderManager'
             $ttl: '%env(int:GEOLOCATOR_CACHE_TTL)%'
 
 
-    Xorg\GeolocatorBundle\Service\BotDetector:
+    GeolocatorBundle\Service\BotDetector:
         arguments:
             $botPatterns: '%env(json:BOT_PATTERNS)%'
             $challengeMode: '%env(bool:BOT_CHALLENGE)%'
-    Xorg\GeolocatorBundle\Service\WebhookNotifier:
+    GeolocatorBundle\Service\WebhookNotifier:
         arguments:
             $webhooks: '%env(json:WEBHOOK_URLS)%'

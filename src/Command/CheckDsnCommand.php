@@ -9,20 +9,20 @@ use GeolocatorBundle\Service\ProviderManager;
 
 class CheckDsnCommand extends Command
 {
-    protected static \$defaultName = 'xorg:geolocator:check-dsn';
+    protected static $defaultName = 'xorg:geolocator:check-dsn';
 
-    private ProviderManager \$providerManager;
+    private ProviderManager $providerManager;
 
-    public function __construct(ProviderManager \$providerManager)
+    public function __construct(ProviderManager $providerManager)
     {
         parent::__construct();
-        \$this->providerManager = \$providerManager;
+        $this->providerManager = $providerManager;
     }
 
-    protected function execute(InputInterface \$input, OutputInterface \$output): int
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        foreach (\$this->providerManager->getProviders() as \$provider) {
-            \$output->writeln('Provider: '.\$provider->getName());
+        foreach ($this->providerManager->getProviders() as $provider) {
+            $output->writeln('Provider: '.$provider->getName());
         }
         return Command::SUCCESS;
     }

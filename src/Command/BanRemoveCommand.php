@@ -10,26 +10,26 @@ use GeolocatorBundle\Service\BanManager;
 
 class BanRemoveCommand extends Command
 {
-    protected static \$defaultName = 'xorg:geolocator:ban:remove';
+    protected static $defaultName = 'xorg:geolocator:ban:remove';
 
-    private BanManager \$banManager;
+    private BanManager $banManager;
 
-    public function __construct(BanManager \$banManager)
+    public function __construct(BanManager $banManager)
     {
         parent::__construct();
-        \$this->banManager = \$banManager;
+        $this->banManager = $banManager;
     }
 
     protected function configure()
     {
-        \$this->addArgument('ip', InputArgument::REQUIRED, 'IP address');
+        $this->addArgument('ip', InputArgument::REQUIRED, 'IP address');
     }
 
-    protected function execute(InputInterface \$input, OutputInterface \$output): int
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        \$ip = \$input->getArgument('ip');
-        \$this->banManager->removeBan(\$ip);
-        \$output->writeln("IP \$ip débannie.");
+        $ip = $input->getArgument('ip');
+        $this->banManager->removeBan($ip);
+        $output->writeln("IP $ip débannie.");
         return Command::SUCCESS;
     }
 }

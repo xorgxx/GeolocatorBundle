@@ -6,5 +6,5 @@ use Symfony\Component\HttpFoundation\Request;
 
 interface FilterInterface
 {
-    public function apply(Request \$request, array \$geoData): bool;
+    public function apply(Request $request, array $geoData): bool;
 }
