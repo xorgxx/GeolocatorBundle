@@ -2,6 +2,7 @@
 
 namespace GeolocatorBundle\Service;
 
+use Exception;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use DateTimeImmutable;
 use DateInterval;
@@ -9,7 +10,8 @@ use DateInterval;
 class BanManager
 {
     private SessionInterface $session;
-    private string $key = 'geolocator_bans';
+    private const BANS_SESSION_KEY = 'geolocator_bans';
+    private const DEFAULT_DURATION_SECONDS = 3600;
 
     public function __construct(SessionInterface $session)
     {
@@ -17,29 +19,33 @@ class BanManager
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function addBan(string $ip, string $reason, string $duration): void
     {
-        $bans = $this->session->get($this->key, []);
-        $expire = (new DateTimeImmutable())->add(new DateInterval('PT'.(new \DateInterval('PT'.$this->convertDuration($duration)))->s.'S'));
-        $bans[$ip] = ['reason' => $reason, 'expires_at' => $expire->format('c')];
-        $this->session->set($this->key, $bans);
+        $bans = $this->session->get(self::BANS_SESSION_KEY, []);
+        $durationSeconds = $this->parseDurationToSeconds($duration);
+        $expireAt = (new DateTimeImmutable())->add(new DateInterval('PT' . $durationSeconds . 'S'));
+        $bans[ $ip ] = [
+            'reason'     => $reason,
+            'expires_at' => $expireAt->format('c'),
+        ];
+        $this->session->set(self::BANS_SESSION_KEY, $bans);
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function isBanned(string $ip): bool
     {
-        $bans = $this->session->get($this->key, []);
-        if (!isset($bans[$ip])) {
+        $bans = $this->session->get(self::BANS_SESSION_KEY, []);
+        if (!isset($bans[ $ip ])) {
             return false;
         }
-        $expires = new DateTimeImmutable($bans[$ip]['expires_at']);
-        if ($expires < new DateTimeImmutable()) {
-            unset($bans[$ip]);
-            $this->session->set($this->key, $bans);
+        $expiresAt = new DateTimeImmutable($bans[ $ip ][ 'expires_at' ]);
+        if ($expiresAt < new DateTimeImmutable()) {
+            unset($bans[ $ip ]);
+            $this->session->set(self::BANS_SESSION_KEY, $bans);
             return false;
         }
         return true;
@@ -47,23 +53,24 @@ class BanManager
 
     public function listBans(): array
     {
-        return $this->session->get($this->key, []);
+        return $this->session->get(self::BANS_SESSION_KEY, []);
     }
 
     public function removeBan(string $ip): void
     {
-        $bans = $this->session->get($this->key, []);
-        unset($bans[$ip]);
-        $this->session->set($this->key, $bans);
+        $bans = $this->session->get(self::BANS_SESSION_KEY, []);
+        unset($bans[ $ip ]);
+        $this->session->set(self::BANS_SESSION_KEY, $bans);
     }
 
-    private function convertDuration(string $duration): string
+    /**
+     * Convertit la durée textuelle en secondes.
+     */
+    private function parseDurationToSeconds(string $duration): int
     {
-        // Simple parser: supports hours only
-        if (preg_match('/^(\d+)\s*hours?$/', $duration, $m)) {
-            $hours = $m[1];
-            return ($hours * 3600);
+        if (preg_match('/^(\d+)\s*hours?$/i', $duration, $matches)) {
+            return (int)$matches[ 1 ] * 3600;
         }
-        return '3600';
+        return self::DEFAULT_DURATION_SECONDS;
     }
 }

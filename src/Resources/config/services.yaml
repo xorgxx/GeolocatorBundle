@@ -17,6 +17,10 @@ services:
         tags: ['console.command']
 
 
+    GeolocatorBundle\EventListener\GeoFilterListener:
+        arguments:
+            $filters: !tagged_iterator geofilter.filter
+            
     # Service to resolve client IP considering trusted proxies
     GeolocatorBundle\Service\IpResolver:
         arguments:

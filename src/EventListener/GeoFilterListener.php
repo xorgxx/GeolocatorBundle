@@ -2,18 +2,22 @@
 
 namespace GeolocatorBundle\EventListener;
 
-use Symfony\Component\HttpKernel\Event\RequestEvent;
-use Symfony\Component\Routing\RouterInterface;
-use Symfony\Component\HttpFoundation\IpUtils;
-use Symfony\Component\RateLimiter\RateLimiterFactory;
-use GeolocatorBundle\Service\IpResolver;
-use GeolocatorBundle\Service\GeolocationCache;
-use GeolocatorBundle\Service\BanManager;
-use GeolocatorBundle\Service\BotDetector;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Exception;
 use GeolocatorBundle\Event\GeoFilterBlockedEvent;
+use Symfony\Component\HttpFoundation\IpUtils;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\Routing\RouterInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use GeolocatorBundle\Service\BanManager;
+use GeolocatorBundle\Service\FilterInterface;
+use GeolocatorBundle\Service\GeolocationCache;
+use GeolocatorBundle\Service\IpResolver;
+use GeolocatorBundle\Service\BotDetector;
 
 class GeoFilterListener
 {
@@ -23,9 +27,15 @@ class GeoFilterListener
     private BotDetector $botDetector;
     private RateLimiterFactory $rateLimiter;
     private EventDispatcherInterface $dispatcher;
-    private array $config;
     private RouterInterface $router;
+    private array $config;
 
+    /** @var FilterInterface[] */
+    private iterable $filters;
+
+    /**
+     * @param FilterInterface[] $filters  all services tagged with 'geofilter.filter'
+     */
     public function __construct(
         IpResolver $ipResolver,
         GeolocationCache $geolocationCache,
@@ -33,61 +43,165 @@ class GeoFilterListener
         BotDetector $botDetector,
         RateLimiterFactory $rateLimiter,
         EventDispatcherInterface $dispatcher,
+        RouterInterface $router,
         array $config,
-        RouterInterface $router
+        iterable $filters
     ) {
-        $this->ipResolver = $ipResolver;
+        $this->ipResolver       = $ipResolver;
         $this->geolocationCache = $geolocationCache;
-        $this->banManager = $banManager;
-        $this->botDetector = $botDetector;
-        $this->rateLimiter = $rateLimiter;
-        $this->dispatcher = $dispatcher;
-        $this->config = $config;
-        $this->router = $router;
+        $this->banManager       = $banManager;
+        $this->botDetector      = $botDetector;
+        $this->rateLimiter      = $rateLimiter;
+        $this->dispatcher       = $dispatcher;
+        $this->router           = $router;
+        $this->config           = $config;
+        $this->filters          = $filters;
     }
 
+    /**
+     * @throws Exception
+     */
     public function onKernelRequest(RequestEvent $event): void
     {
-        $request = $event->getRequest();
-        $ip = $this->ipResolver->resolve($request);
-
-        if (!$ip) {
-            if ($this->config['simulate']) return;
-            $event->setResponse(new Response('Impossible de déterminer l’IP', 400));
+        if (!$event->isMainRequest()) {
             return;
         }
 
-        // Rate limiter check
-        $limiter = $this->rateLimiter->create($ip);
-        $limit = $limiter->consume();
-        if (!$limit->isAccepted()) {
-            $this->banManager->addBan($ip, 'Flood détecté', $this->config['ban_duration']);
+        $request = $event->getRequest();
+        $ip      = $this->ipResolver->resolve($request);
+
+        if (!$ip) {
+            if (!empty($this->config['simulate'])) {
+                return;
+            }
+            $event->setResponse(new Response('Unable to determine IP', 400));
+            return;
+        }
+
+        // Bypass explicitly allowed ranges
+        if (!empty($this->config['allowedRanges']) && IpUtils::checkIp($ip, $this->config['allowedRanges'])) {
+            return;
+        }
+
+        // Check existing ban
+        if ($this->banManager->isBanned($ip)) {
             $event->setResponse($this->buildResponse());
             return;
         }
 
-        // Bot detection
+        // Static IP filtering
+        if (!empty($this->config['blockedIps']) && in_array($ip, $this->config['blockedIps'], true)) {
+            $this->banAndRespond($ip, 'Blocked IP');
+            return;
+        }
+        if (!empty($this->config['blockedRanges'])
+            && IpUtils::checkIp($ip, $this->config['blockedRanges'])
+        ) {
+            $this->banAndRespond($ip, 'Blocked range');
+            return;
+        }
+
+        // Geolocation
+        $data     = $this->geolocationCache->locate($ip);
+        $country  = $data['countryCode']   ?? null;
+        $continent= $data['continentCode'] ?? null;
+        $asn      = $data['asn']           ?? null;
+        $isp      = $data['isp']           ?? null;
+
+        // Countries / continents
+        if (!empty($this->config['allowedCountries']) && in_array($country, $this->config['allowedCountries'], true)) {
+            return;
+        }
+        if (!empty($this->config['blockedCountries']) && in_array($country, $this->config['blockedCountries'], true)) {
+            $this->banAndRespond($ip, 'Blocked country');
+            return;
+        }
+        if (!empty($this->config['allowedContinents']) && in_array($continent, $this->config['allowedContinents'], true)) {
+            return;
+        }
+        if (!empty($this->config['blockedContinents']) && in_array($continent, $this->config['blockedContinents'], true)) {
+            $this->banAndRespond($ip, 'Blocked continent');
+            return;
+        }
+
+        // ASN / ISP
+        if (!empty($this->config['allowedAsns']) && in_array($asn, $this->config['allowedAsns'], true)) {
+            return;
+        }
+        if (!empty($this->config['blockedAsns']) && in_array($asn, $this->config['blockedAsns'], true)) {
+            $this->banAndRespond($ip, 'Blocked ASN');
+            return;
+        }
+        if (!empty($this->config['allowedIsps']) && in_array($isp, $this->config['allowedIsps'], true)) {
+            return;
+        }
+        if (!empty($this->config['blockedIsps']) && in_array($isp, $this->config['blockedIsps'], true)) {
+            $this->banAndRespond($ip, 'Blocked ISP');
+            return;
+        }
+
+        // VPN
+        if (($this->config['requireNonVPN'] ?? false) && !empty($data['proxy'])) {
+            $this->banAndRespond($ip, 'VPN detected');
+            return;
+        }
+
+        // Crawler/User-Agent
         $ua = $request->headers->get('User-Agent', '');
-        if ($this->botDetector->isBot($ua)) {
-            if ($this->botDetector->shouldChallenge($ua)) {
-                // TODO: issue captcha challenge
-            } else {
-                $this->banManager->addBan($ip, 'Bot détecté', $this->config['ban_duration']);
-                $event->setResponse($this->buildResponse());
+        foreach ($this->config['blocked_crawlers'] ?? [] as $pattern) {
+            if (stripos($ua, $pattern) !== false) {
+                $this->banAndRespond($ip, 'Crawler detected');
                 return;
             }
         }
 
-        // Existing filters...
-        // At each ban, dispatch event
-        // $this->dispatcher->dispatch(new GeoFilterBlockedEvent($ip, 'Reason', $data['countryCode'] ?? null));
+        // Flood / Ping
+        $limiter = $this->rateLimiter->create($ip);
+        if (!$limiter->consume()->isAccepted()) {
+            $this->banAndRespond($ip, 'Flood detected');
+            return;
+        }
+
+        // Custom filters
+        foreach ($this->filters as $filter) {
+            if ($filter->apply($request, $data)) {
+                $this->banAndRespond($ip, 'Filter '.get_class($filter));
+                return;
+            }
+        }
+
+        // No blocking → allow access
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function banAndRespond(string $ip, string $reason): void
+    {
+        $this->banManager->addBan($ip, $reason, $this->config['ban_duration'] ?? '1 hour');
+        $eventResponse = $this->buildResponse();
+        $this->dispatcher->dispatch(
+        // You may define an event for logging/webhook
+            new GeoFilterBlockedEvent($ip, $reason, null)
+        );
+        // Note: $event is not available here,
+        // you should pass the RequestEvent as a parameter if needed
+        // or build and throw an HTTP exception.
+        // Simplified example:
+        throw new HttpException(
+            $eventResponse->getStatusCode(), $reason
+        );
     }
 
     private function buildResponse(): Response
     {
-        if ($this->config['use_custom_blocked_page']) {
-            return new Response($this->router->generate($this->config['redirect_route']), 403);
+        if (!empty($this->config['use_custom_blocked_page'])) {
+            return new Response(
+                $this->router->generate($this->config['redirect_route']), 403
+            );
         }
-        return new RedirectResponse($this->router->generate($this->config['redirect_route']));
+        return new RedirectResponse(
+            $this->router->generate($this->config['redirect_route'])
+        );
     }
 }

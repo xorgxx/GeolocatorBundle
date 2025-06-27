@@ -6,21 +6,28 @@ use Symfony\Component\HttpFoundation\Request;
 
 class IpResolver
 {
-    // No need for manual proxy configuration
+    private const PUBLIC_IP_FILTER_FLAGS = FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE;
+
     public function resolve(Request $request): ?string
     {
-        // Check X-Forwarded-For header
-        $xff = $request->headers->get('X-Forwarded-For');
-        if ($xff) {
-            $ips = array_map('trim', explode(',', $xff));
-            foreach ($ips as $candidate) {
-                // Skip private and reserved ranges
-                if (filter_var($candidate, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
-                    return $candidate;
-                }
+        $xForwardedFor = $request->headers->get('X-Forwarded-For');
+        if ($xForwardedFor) {
+            $publicIp = $this->getFirstValidPublicIp($xForwardedFor);
+            if ($publicIp !== null) {
+                return $publicIp;
             }
         }
-        // Fallback to remote address
         return $request->server->get('REMOTE_ADDR');
+    }
+
+    private function getFirstValidPublicIp(string $xForwardedFor): ?string
+    {
+        $ips = array_map('trim', explode(',', $xForwardedFor));
+        foreach ($ips as $candidateIp) {
+            if (filter_var($candidateIp, FILTER_VALIDATE_IP, self::PUBLIC_IP_FILTER_FLAGS)) {
+                return $candidateIp;
+            }
+        }
+        return null;
     }
 }
