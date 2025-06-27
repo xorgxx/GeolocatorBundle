@@ -16,6 +16,7 @@ Filtrage d’accès basé sur la géolocalisation IP, configuration flexible, ex
 - [Dashboard Admin](#dashboard-admin)
 - [Tests & Doc Interactive](#tests--doc-interactive)
 - [Sécurité & Performance](#sécurité--performance)
+- [Stratégie de Fallback](#stratégie-de-fallback)
 - [Extensibilité](#extensibilité)
 - [Packaging](#packaging)
 
@@ -129,6 +130,17 @@ Route : `/admin/geolocator`
 - Validation des DSN (prévenir SSRF)
 - Timeout et retry, appels asynchrones optionnels
 - Cache partagé (PSR-6) pour réduire la latence
+
+### Stratégie de Fallback
+
+Le bundle implémente une stratégie robuste pour gérer les cas d'erreurs avec les fournisseurs de géolocalisation :
+
+- **Gestion des timeout** : Détection automatique des fournisseurs qui ne répondent pas
+- **Fallback entre fournisseurs** : Basculement automatique vers un autre fournisseur en cas d'erreur
+- **Marquage temporaire** : Les fournisseurs défaillants sont temporairement exclus
+- **Configuration flexible** : Définissez le nombre de tentatives, les délais d'attente et le comportement par défaut
+
+Pour plus de détails, consultez [docs/FALLBACK_STRATEGY.md](docs/FALLBACK_STRATEGY.md).
 
 ### Extensibilité
 

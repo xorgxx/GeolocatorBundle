@@ -4,6 +4,7 @@ namespace GeolocatorBundle\EventListener;
 
 use Exception;
 use GeolocatorBundle\Event\GeoFilterBlockedEvent;
+use Psr\Cache\InvalidArgumentException;
 use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -60,6 +61,7 @@ class GeoFilterListener
 
     /**
      * @throws Exception
+     * @throws InvalidArgumentException
      */
     public function onKernelRequest(RequestEvent $event): void
     {
