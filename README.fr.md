@@ -1,4 +1,4 @@
-# XorgGeolocatorBundle
+# GeolocatorBundle
 
 # Français
 
