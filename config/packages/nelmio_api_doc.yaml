@@ -1,0 +1,5 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: 'XorgGeolocator API'
+            version: '1.0.0'

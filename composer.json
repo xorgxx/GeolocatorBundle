@@ -1,0 +1,21 @@
+{
+  "name": "geolocator-bundle",
+  "description": "Bundle de filtrage d\u2019acc\u00e8s bas\u00e9 sur la g\u00e9olocalisation IP",
+  "type": "symfony-bundle",
+  "require": {
+    "php": ">=8.3",
+    "symfony/framework-bundle": "7.3.*"
+  },
+  "autoload": {
+    "psr-4": {
+      "GeolocatorBundle\\": "src/"
+    }
+  },
+  "extra": {
+    "symfony": {
+      "bundle": {
+        "GeolocatorBundle\\GeolocatorBundle": "all"
+      }
+    }
+  }
+}

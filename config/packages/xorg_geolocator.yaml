@@ -1,0 +1,28 @@
+xorg_geolocator:
+  enabled: true
+  redis_enabled: false      # false: mode simple (filesystem cache), true: utilise Redis pour cache
+  rabbit_enabled: false     # false: mode synchrone, true: utilise RabbitMQ via Messenger
+  cache_pool: 'cache.app'   # pool PSR-6 (filesystem ou Redis)
+  redirect_route: 'app_blocked'
+  use_custom_blocked_page: true
+  simulate: false
+  ban_duration: '3 hours'
+  ping_threshold: 10
+
+  # Filtrage IP
+  blocked_crawlers: ['Googlebot', 'AhrefsBot']
+  blockedIps: []
+  blockedRanges: []
+  allowedRanges: []
+
+  # Géolocalisation
+  blockedCountries: []
+  allowedCountries: []
+  blockedContinents: []
+  allowedContinents: []
+
+  # ASN & FAI
+  blockedAsns: []
+  allowedAsns: []
+  blockedIsps: []
+  allowedIsps: []
