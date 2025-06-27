@@ -1,244 +1,94 @@
-## XorgGeolocatorBundle
+# GeolocatorBundle
+
+Ce repository contient deux versions du guide d’utilisation du bundle :
+
+* 📘 [README français](README.fr.md)
+* 📗 [README English](README.en.md)
+
+Le fichier ci-dessus est un index léger pour naviguer vers le guide complet dans la langue de votre choix.
+
+
+## Démarrage rapide / Getting Started
+
+Pour aider le développeur à installer et configurer le bundle :
+
+1. **Installation**
+
+    * Composer : `composer require geolocator-bundle`
+    * Flex : vérifiez que `GeolocatorBundle\GeolocatorBundle` apparaît bien dans `config/bundles.php`
+
+2. **Paramétrage**
+
+    * Copiez `config/packages/geolocator.yaml` et ajustez les options :
+
+        * `enabled` : activer/désactiver
+        * `redis_enabled` / `rabbit_enabled`
+        * DSN providers : `GEOLOCATOR_PROVIDERS_DSN`
+        * `TRUSTED_PROXIES`, `MESSENGER_TRANSPORT_DSN`, etc.
+    * Définissez les variables d’environnement dans `.env.local` ou serveur.
+
+3. **Validation**
+
+    * Exécutez `composer dump-autoload`
+    * Lancez `vendor/bin/pest` et vos WebTestCase
+    * Démarrez le serveur : `bin/console server:run`
+    * Testez la route `/__geo/debug` et le dashboard admin
 
 ---
 
-# Français
+## Guide complet
 
-### 📦 Bundle Symfony 7.3 (PHP 8.3)
+* Si vous développez en français, ouvrez [README.fr.md](README.fr.md)
+* If you prefer English, open [README.en.md](README.en.md)
 
-Filtrage d’accès basé sur la géolocalisation IP, configuration flexible, extensible.
+## Configuration avancée
 
-### Sommaire
+Le fichier principal de configuration **`geolConfig.yaml`** (alias `config/packages/geolocator.yaml`) vous permet de personnaliser :
 
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Services & Composants](#services--composants)
-- [Usage](#usage)
-- [Commandes CLI](#commandes-cli)
-- [Dashboard Admin](#dashboard-admin)
-- [Tests & Doc Interactive](#tests--doc-interactive)
-- [Sécurité & Performance](#sécurité--performance)
-- [Extensibilité](#extensibilité)
-- [Packaging](#packaging)
+* Activation du bundle (`enabled`)
+* Modes de cache (`redis_enabled`, `cache_pool`)
+* Traitement synchrone ou asynchrone (`rabbit_enabled`, `messenger_transport`)
+* Paramètres de filtrage IP, pays, ASN, ISP, VPN, User-Agent, flood...
 
----
+Pour plus de détails, consultez la documentation :
 
-### Installation
-
-Voir [docs/INSTALLATION.md](docs/INSTALLATION.md)
-
-### Configuration
-
-#### Mode simple par défaut
-```yaml
-# config/packages/framework.yaml
-framework:
-  cache:
-    app: cache.adapter.filesystem  # Cache sur filesystem
-
-# config/packages/xorg_geolocator.yaml
-xorg_geolocator:
-  enabled: true
-  redis_enabled: false      # Désactive Redis (utilise filesystem)
-  rabbit_enabled: false     # Désactive RabbitMQ (mode synchrone)
-  cache_pool: 'cache.app'
-  redirect_route: 'app_blocked'
-  use_custom_blocked_page: true
-  simulate: false
-  ban_duration: '3 hours'
-  ping_threshold: 10
-  # Filtrage...
-```
-
-#### Activer Redis ou RabbitMQ
-```yaml
-# Pour Redis
-xorg_geolocator:
-  redis_enabled: true
-
-framework:
-  cache:
-    app: cache.adapter.redis
-
-# Pour RabbitMQ (mode async)
-xorg_geolocator:
-  rabbit_enabled: true
-
-framework:
-  messenger:
-    transports:
-      async: '%env(MESSENGER_TRANSPORT_DSN)%'
-    routing:
-      'Xorg\GeolocatorBundle\Message\GeolocateMessage': async
-```
+* Français : [docs/CONFIGURATION.md](docs/CONFIGURATION.md)
+* English : [docs/CONFIGURATION\_EN.md](docs/CONFIGURATION_EN.md)
 
 ---
 
-### Services & Composants
+## Checklist de validation
 
-| Service            | Rôle                                          |
-| ------------------ | --------------------------------------------- |
-| `IpResolver`       | Résolution automatique de l’IP client (XFF)   |
-| `GeolocationCache` | Cache PSR-6 autour des providers IP           |
-| `ProviderManager`  | Round‑robin des providers configurés          |
-| `BanManager`       | Gestion des bans en session                   |
-| `BotDetector`      | Détection de bots via User-Agent              |
-| `RateLimiter`      | Protection flood/ping via Symfony RateLimiter |
-| `WebhookNotifier`  | Envoi de webhooks sur blocages                |
+Le squelette du bundle est bien en place, mais pour qu’il soit « fonctionnel » à 100 % il reste quelques étapes, détaillées dans [docs/GUIDE\_VALIDATION.md](docs/GUIDE_VALIDATION.md) :
 
-### Usage
+1. **Implémentation des filtres**
 
-```php
-use Xorg\GeolocatorBundle\Attribute\GeoFilter;
+    * `GeoFilterListener` contient aujourd’hui des `// TODO` pour la logique VPN, User-Agent, flood, etc.
+    * Traduction des règles métier en appels `IpUtils::checkIp`, comparaisons de pays/ASN/ISP et déclenchement du ban ou bypass.
 
-#[GeoFilter(
-    blockedCountries: ['CN','RU'],
-    requireNonVPN: true,
-    simulate: false
-)]
-public function index(): Response
-{
-    // ...
-}
-```
+2. **Configuration réelle**
 
-Options : `blockedIps`, `blockedRanges`, `allowedRanges`, `blockedCountries`, `blockedContinents`, `blockedAsns`, `blockedIsps`, `requireNonVPN`, `pingThreshold`, `simulate`, `forceProvider`
+    * Vérifiez que `config/packages/geolocator.yaml` est bien chargé (alias `geolConfig.yaml`) : activez `rabbit_enabled` ou `redis_enabled` selon votre usage ; en environnement de test, désactivez-les pour rester en mode synchrone/filesystem.
+    * Assurez-vous que les variables d’environnement (`GEOLOCATOR_PROVIDERS_DSN`, `TRUSTED_PROXIES`, `MESSENGER_TRANSPORT_DSN`, etc.) sont définies.
 
-### Commandes CLI
+3. **Composer & autoload**
 
-```bash
-php bin/console xorg:geolocator:ban:list
-php bin/console xorg:geolocator:ban:add <ip> [duration]
-php bin/console xorg:geolocator:ban:remove <ip>
-php bin/console xorg:geolocator:check-dsn
-php bin/console xorg:geolocator:export-firewall <format>
-```
+    * Exécutez `composer dump-autoload` pour prendre en compte les namespaces.
+    * Vérifiez que `extra.symfony.bundle` de `composer.json` pointe vers `GeolocatorBundle\GeolocatorBundle` et qu’il apparaît dans `bundles.php`.
 
-### Dashboard Admin
+4. **Tests de base**
+   Lancez :
 
-Route : `/admin/geolocator`
+    * `vendor/bin/pest` pour les tests unitaires.
+    * Vos WebTestCase pour valider :
 
-- Liste paginée des IP bannies (raison, expiration)
-- Actions : débannir, ajuster durée, export CSV/XLSX
+        * IP dans `blockedCountries` → 403.
+        * Whitelist via `allowedRanges`, `allowedCountries` → accès autorisé.
+        * Cache Redis évite un second appel géoloc.
+        * Mode RabbitMQ délègue la géoloc via Messenger.
 
-### Tests & Doc Interactive
+5. **Exécution manuelle**
 
-- Tests unitaires (PestPHP) et intégration HTTP (WebTestCase/Panther)
-- Swagger UI à `/api/docs` (NelmioApiDocBundle)
+    * `bin/console server:run` et test des routes (`/__geo/debug`, `/`, `/admin/geolocator`).
+    * Testez avec l’en-tête `X-Forwarded-For` pour valider `IpResolver`.
 
-### Sécurité & Performance
-
-- Validation des DSN (prévenir SSRF)
-- Timeout et retry, appels asynchrones optionnels
-- Cache partagé (PSR-6) pour réduire la latence
-
-### Extensibilité
-
-Le système utilise l’interface `FilterInterface` et le tag `xorg.geofilter.filter`.Pour plus d’infos, voir [docs/EXTENSIBILITY.md](docs/EXTENSIBILITY.md).
-
-### Packaging
-
-- Publication Packagist
-- Installation via Composer + Symfony Flex
-
----
-
-# English
-
-### 📦 Symfony Bundle 7.3 (PHP 8.3)
-
-Access filtering based on IP geolocation, flexible configuration, extensible.
-
-### Table of Contents
-
-- [Installation](#installation-1)
-- [Configuration](#configuration-1)
-- [Services & Components](#services--components)
-- [Usage](#usage-1)
-- [CLI Commands](#cli-commands)
-- [Admin Dashboard](#admin-dashboard)
-- [Tests & Interactive Docs](#tests--interactive-docs)
-- [Security & Performance](#security--performance)
-- [Extensibility](#extensibility)
-- [Packaging](#packaging-1)
-
----
-
-### Installation
-
-See [docs/INSTALLATION_EN.md](docs/INSTALLATION_EN.md)
-
-### Configuration
-
-- `.env` / `.env.local`
-- `config/packages/framework.yaml`
-- `config/packages/xorg_geolocator.yaml`
-
-### Services & Components
-
-| Service            | Role                                   |
-| ------------------ | -------------------------------------- |
-| `IpResolver`       | Client IP resolution (X-Forwarded-For) |
-| `GeolocationCache` | PSR-6 cache for geolocation            |
-| `ProviderManager`  | Round-robin of configured providers    |
-| `BanManager`       | Ban management in session              |
-| `BotDetector`      | Bot detection via User-Agent           |
-| `RateLimiter`      | Flood/ping protection                  |
-| `WebhookNotifier`  | Webhook notifications on blocks        |
-
-### Usage
-
-```php
-use Xorg\GeolocatorBundle\Attribute\GeoFilter;
-
-#[GeoFilter(
-    blockedCountries: ['CN','RU'],
-    requireNonVPN: true,
-    simulate: false
-)]
-public function index(): Response
-{
-    // ...
-}
-```
-
-Options: `blockedIps`, `blockedRanges`, `allowedRanges`, `blockedCountries`, `blockedContinents`, `blockedAsns`, `blockedIsps`, `requireNonVPN`, `pingThreshold`, `simulate`, `forceProvider`
-
-### CLI Commands
-
-```bash
-php bin/console xorg:geolocator:ban:list
-php bin/console xorg:geolocator:ban:add <ip> [duration]
-php bin/console xorg:geolocator:ban:remove <ip>
-php bin/console xorg:geolocator:check-dsn
-php bin/console xorg:geolocator:export-firewall <format>
-```
-
-### Admin Dashboard
-
-**Route**: `/admin/geolocator`
-
-- Paginated list of banned IPs (reason, expiry)
-- Actions: unban, adjust duration, export CSV/XLSX
-
-### Tests & Interactive Docs
-
-- Unit tests (PestPHP) and HTTP integration tests (WebTestCase/Panther)
-- Swagger UI at `/api/docs` (NelmioApiDocBundle)
-
-### Security & Performance
-
-- DSN validation (prevent SSRF)
-- Timeout and retry, optional async calls
-- Shared cache (PSR-6) to reduce latency
-
-### Extensibility
-
-System uses `FilterInterface` and the `xorg.geofilter.filter` tag.See [docs/EXTENSIBILITY_EN.md](docs/EXTENSIBILITY_EN.md).
-
-### Packaging
-
-- Publish on Packagist
-- Install via Composer + Symfony Flex
-
-*© 2025 XorgGeolocatorBundle*
