@@ -9,7 +9,7 @@ use GeolocatorBundle\Service\ProviderManager;
 
 class CheckDsnCommand extends Command
 {
-    protected static $defaultName = 'xorg:geolocator:check-dsn';
+    protected static $defaultName = 'neox:geolocator:check-dsn';
 
     private ProviderManager $providerManager;
 

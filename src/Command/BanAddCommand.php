@@ -10,7 +10,7 @@ use GeolocatorBundle\Service\BanManager;
 
 class BanAddCommand extends Command
 {
-    protected static $defaultName = 'xorg:geolocator:ban:add';
+    protected static $defaultName = 'neox:geolocator:ban:add';
 
     private BanManager $banManager;
 

@@ -11,7 +11,7 @@ use GeolocatorBundle\Export\FirewallExporter;
 
 class ExportFirewallCommand extends Command
 {
-    protected static $defaultName = 'xorg:geolocator:export-firewall';
+    protected static $defaultName = 'neox:geolocator:export-firewall';
 
     private BanManager $banManager;
     private FirewallExporter $exporter;

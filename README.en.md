@@ -62,11 +62,11 @@ Options: `blockedIps`, `blockedRanges`, `allowedRanges`, `blockedCountries`, `bl
 ### CLI Commands
 
 ```bash
-php bin/console xorg:geolocator:ban:list
-php bin/console xorg:geolocator:ban:add <ip> [duration]
-php bin/console xorg:geolocator:ban:remove <ip>
-php bin/console xorg:geolocator:check-dsn
-php bin/console xorg:geolocator:export-firewall <format>
+php bin/console neox:geolocator:ban:list
+php bin/console neox:geolocator:ban:add <ip> [duration]
+php bin/console neox:geolocator:ban:remove <ip>
+php bin/console neox:geolocator:check-dsn
+php bin/console neox:geolocator:export-firewall <format>
 ```
 
 ### Admin Dashboard
@@ -89,7 +89,7 @@ php bin/console xorg:geolocator:export-firewall <format>
 
 ### Extensibility
 
-System uses `FilterInterface` and the `xorg.geofilter.filter` tag.See [docs/EXTENSIBILITY_EN.md](docs/EXTENSIBILITY_EN.md).
+System uses `FilterInterface` and the `neox.geofilter.filter` tag.See [docs/EXTENSIBILITY_EN.md](docs/EXTENSIBILITY_EN.md).
 
 ### Packaging
 

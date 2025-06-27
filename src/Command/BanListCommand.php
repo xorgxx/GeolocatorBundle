@@ -8,7 +8,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class BanListCommand extends Command
 {
-    protected static $defaultName = 'xorg:geolocator:ban:list';
+    protected static $defaultName = 'neox:geolocator:ban:list';
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
