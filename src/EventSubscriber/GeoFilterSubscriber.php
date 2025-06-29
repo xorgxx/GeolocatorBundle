@@ -16,38 +16,35 @@ use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 /**
- * Abonne le filtrage géographique au kernel.request
- * et bloque les requêtes selon les règles configurées.
+ * Subscribes geographic filtering to kernel.request
+ * and blocks requests according to configured rules.
  */
 final class GeoFilterSubscriber implements EventSubscriberInterface
 {
-    private IpResolver $ipResolver;
-    private GeolocatorService $geolocatorService;
-    private BanManager $banManager;
-    private FilterChain $filterChain;
+    private IpResolver               $ipResolver;
+    private GeolocatorService        $geolocatorService;
+    private BanManager               $banManager;
+    private FilterChain              $filterChain;
     private EventDispatcherInterface $eventDispatcher;
-    private array $config;
+    private array                    $config;
 
-    public function __construct(
-        IpResolver $ipResolver,
-        GeolocatorService $geolocatorService,
-        BanManager $banManager,
-        FilterChain $filterChain,
-        EventDispatcherInterface $eventDispatcher,
-        ParameterBagInterface $params
-    ) {
-        $this->ipResolver        = $ipResolver;
+    public function __construct(IpResolver $ipResolver, GeolocatorService $geolocatorService, BanManager $banManager, FilterChain $filterChain, EventDispatcherInterface $eventDispatcher, ParameterBagInterface $params)
+    {
+        $this->ipResolver = $ipResolver;
         $this->geolocatorService = $geolocatorService;
-        $this->banManager        = $banManager;
-        $this->filterChain       = $filterChain;
-        $this->eventDispatcher   = $eventDispatcher;
-        $this->config            = $params->get('geolocator') ?? [];
+        $this->banManager = $banManager;
+        $this->filterChain = $filterChain;
+        $this->eventDispatcher = $eventDispatcher;
+        $this->config = $params->get('geolocator') ?? [];
     }
 
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::REQUEST => ['onKernelRequest', 0],
+            KernelEvents::REQUEST => [
+                'onKernelRequest',
+                0
+            ],
         ];
     }
 
@@ -58,52 +55,38 @@ final class GeoFilterSubscriber implements EventSubscriberInterface
         }
 
         $request = $event->getRequest();
-        $ip      = $this->ipResolver->resolve($request);
+        $ip = $this->ipResolver->resolve($request);
         if ($ip === null) {
             return;
         }
 
-        // 1) Déjà banni ?
+        // 1) Already banned?
         if ($this->banManager->isBanned($ip)) {
             $this->banAndRespond($event, $ip, 'IP already banned', null);
             return;
         }
 
-        // 2) Géolocalisation
+        // 2) Geolocation
         $geoData = $this->geolocatorService->locateIp($ip);
 
-        // 3) Application des filtres centralisés
+        // 3) Apply centralized filters
         $result = $this->filterChain->process($request, $geoData);
         if (null !== $result && $result->isBlocked()) {
-            $this->banAndRespond(
-                $event,
-                $ip,
-                $result->getReason(),
-                $result->getCountry()
-            );
+            $this->banAndRespond($event, $ip, $result->getReason(), $result->getCountry());
             return;
         }
 
-        // 4) Blocage par pays (encore gérable comme filtre si tu veux)
-        $blockedCountries = $this->config['blocked_countries'] ?? [];
-        $country          = $geoData['country'] ?? null;
+        // 4) Country blocking (could be handled as a filter if needed)
+        $blockedCountries = $this->config[ 'blocked_countries' ] ?? [];
+        $country = $geoData[ 'country' ] ?? null;
         if (null !== $country && \in_array($country, $blockedCountries, true)) {
-            $this->banAndRespond(
-                $event,
-                $ip,
-                'Country blocked: ' . $country,
-                $country
-            );
+            $this->banAndRespond($event, $ip, 'Country blocked: ' . $country, $country);
         }
     }
 
-    private function banAndRespond(
-        RequestEvent $event,
-        string $ip,
-        string $reason,
-        ?string $country
-    ): void {
-        $duration = $this->config['ban_duration'] ?? '1 hour';
+    private function banAndRespond(RequestEvent $event, string $ip, string $reason, ?string $country): void
+    {
+        $duration = $this->config[ 'ban_duration' ] ?? '1 hour';
         $this->banManager->addBan($ip, $reason, $duration);
 
         $response = new Response('Forbidden', Response::HTTP_FORBIDDEN);

@@ -11,10 +11,10 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
- * Traite en back-ground un GeolocateMessage :
- *   - sélectionne un provider (optionnellement forcé)
- *   - récupère les données
- *   - les met en cache
+ * Process a GeolocateMessage in background:
+ *   - select a provider (optionally forced)
+ *   - retrieve data
+ *   - store in cache
  */
 #[AsMessageHandler]
 final class GeolocateMessageHandler
@@ -38,14 +38,14 @@ final class GeolocateMessageHandler
         $ip        = $message->getIp();
         $requestId = $message->getRequestId();
 
-        $this->logger->info('Démarrage géolocalisation asynchrone', [
+        $this->logger->info('Starting asynchronous geolocation', [
             'request_id' => $requestId,
             'ip'         => $ip,
         ]);
 
         try {
             if ($this->cache->has($ip)) {
-                $this->logger->info('Données déjà en cache, skip', [
+                $this->logger->info('Data already in cache, skipping', [
                     'request_id' => $requestId,
                     'ip'         => $ip,
                 ]);
@@ -61,14 +61,14 @@ final class GeolocateMessageHandler
 
             $this->cache->set($ip, $geoData);
 
-            $this->logger->info('Géolocalisation réussie', [
+            $this->logger->info('Geolocation successful', [
                 'request_id' => $requestId,
                 'ip'         => $ip,
                 'provider'   => $provider->getName(),
                 'country'    => $geoData['country'] ?? 'unknown',
             ]);
         } catch (\Throwable $e) {
-            $this->logger->error('Erreur géoloc asynchrone', [
+            $this->logger->error('Asynchronous geolocation error', [
                 'request_id' => $requestId,
                 'ip'         => $ip,
                 'error'      => $e->getMessage(),

@@ -9,7 +9,7 @@ use Psr\Cache\InvalidArgumentException as CacheInvalidArgumentException;
 use GeolocatorBundle\Service\ProviderManager;
 
 /**
- * Cache PSR-6 pour les données de géolocalisation IP.
+ * PSR-6 cache for IP geolocation data.
  */
 final class GeolocationCache
 {
@@ -18,11 +18,11 @@ final class GeolocationCache
     private int                    $ttl;
 
     /**
-     * @param CacheItemPoolInterface $cachePool        PSR-6 Pool de cache.
-     * @param ProviderManager        $providerManager  Gestionnaire de providers round-robin.
-     * @param int                    $ttl              Durée de vie en secondes (>= 0).
+     * @param CacheItemPoolInterface $cachePool PSR-6 cache pool.
+     * @param ProviderManager $providerManager Round-robin provider manager.
+     * @param int $ttl Time to live in seconds (>= 0).
      *
-     * @throws \InvalidArgumentException Si le TTL est négatif.
+     * @throws \InvalidArgumentException If TTL is negative.
      */
     public function __construct(
         CacheItemPoolInterface $cachePool,
@@ -30,7 +30,7 @@ final class GeolocationCache
         int $ttl = 300
     ) {
         if ($ttl < 0) {
-            throw new \InvalidArgumentException(sprintf('TTL invalide : %d', $ttl));
+            throw new \InvalidArgumentException(sprintf('Invalid TTL: %d', $ttl));
         }
 
         $this->cachePool       = $cachePool;
@@ -52,7 +52,7 @@ final class GeolocationCache
     public function locate(string $ip): array
     {
         if (!filter_var($ip, FILTER_VALIDATE_IP)) {
-            throw new \InvalidArgumentException(sprintf('IP invalide : %s', $ip));
+            throw new \InvalidArgumentException(sprintf('Invalid IP: %s', $ip));
         }
 
         $cacheKey  = $this->getCacheKeyForIp($ip);

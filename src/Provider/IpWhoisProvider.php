@@ -26,4 +26,9 @@ class IpWhoisProvider implements GeolocationProviderInterface
         $response = $this->client->request('GET', $url);
         return $response->toArray();
     }
+
+    public function isAvailable(): bool
+    {
+        return true;
+    }
 }

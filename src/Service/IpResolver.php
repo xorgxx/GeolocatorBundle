@@ -6,16 +6,16 @@ namespace GeolocatorBundle\Service;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * Résout l’adresse IP cliente, en tenant compte de l’en-tête X-Forwarded-For
- * et des plages privées/réservées.
+ * Resolves the client IP address, taking into account the X-Forceded-For header
+ * and private/reserved beaches.
  */
 final class IpResolver
 {
-    /** @var int Flags pour exclure les plages privées et réservées */
+    /** @var int Flags to exclude private and reserved ranges */
     private int $filterFlags;
 
     /**
-     * @param int $filterFlags FILTER_FLAG_* valides pour filter_var()
+     * @param int $filterFlags Valid FILTER_FLAG_* for filter_var()
      */
     public function __construct(int $filterFlags = FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)
     {
@@ -23,15 +23,15 @@ final class IpResolver
     }
 
     /**
-     * Retourne la première IP publique valide du X-Forwarded-For,
-     * ou la REMOTE_ADDR si aucune n’est trouvée.
+     * Return the first public IP valid of X-Forceded-For,
+     * or Remote_Addr if none is found.
      *
-     * @param Request $request Requête HTTP en cours.
-     * @return string|null     IP cliente ou null si non déterminable.
+     * @Param Request $Request HTTP request in progress.
+     * @RETURN String | Null IP CLIENTE or NULL if not determinable.
      */
     public function resolve(Request $request): ?string
     {
-        // Symfony gère déjà les proxies de confiance si configurés :
+        // Symfony already manages the confidence proxies if configured:
         if (method_exists($request, 'getClientIps')) {
             $ips = $request->getClientIps();
             if (!empty($ips) && $this->isValidPublicIp($ips[0])) {
@@ -53,10 +53,10 @@ final class IpResolver
     }
 
     /**
-     * Extrait la première IP publique valide d’une chaîne XFF.
+     * Extract the first public IP valid from an XFF channel.
      *
-     * @param string $xff Valeur brute de l’en-tête X-Forwarded-For.
-     * @return string|null
+     * @Param String $XFF gross value of the X-Forceded-For header.
+     * @return string | null
      */
     private function extractPublicIpFromXff(string $xff): ?string
     {
@@ -69,7 +69,7 @@ final class IpResolver
     }
 
     /**
-     * Vérifie qu’une IP est valide et hors des plages privées/réservées.
+     * Check that an IP is valid and outside the private/reserved beaches.
      *
      * @param string $ip
      * @return bool

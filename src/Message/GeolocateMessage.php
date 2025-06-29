@@ -24,7 +24,7 @@ final class GeolocateMessage
     public function __construct(string $ip, ?string $forceProvider = null, ?string $requestId = null)
     {
         if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
-            throw new \InvalidArgumentException(sprintf('Adresse IP invalide : %s', $ip));
+            throw new \InvalidArgumentException(sprintf('Invalid IP address: %s', $ip));
         }
         $this->ip            = $ip;
         $this->forceProvider = $forceProvider;

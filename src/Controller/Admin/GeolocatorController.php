@@ -12,6 +12,6 @@ class GeolocatorController extends AbstractController
     public function dashboard(): Response
     {
         // TODO: récupérer les données depuis la session
-        return \$this->render('@XorgGeolocator/dashboard.html.twig', []);
+        return this->render('@XorgGeolocator/dashboard.html.twig', []);
     }
 }

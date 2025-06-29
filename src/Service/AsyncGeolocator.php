@@ -21,10 +21,10 @@ final class AsyncGeolocator
     private bool $asyncEnabled;
 
     /**
-     * @param MessageBusInterface $messageBus   Le bus Messenger pour dispatcher les messages.
-     * @param GeolocationCache    $cache        Cache PSR-6 pour stocker les résultats.
-     * @param LoggerInterface     $logger       Logger pour tracer les actions.
-     * @param bool                $asyncEnabled Activation du mode asynchrone (RabbitMQ).
+     * @param MessageBusInterface $messageBus Messenger bus for dispatching messages.
+     * @param GeolocationCache $cache PSR-6 cache for storing results.
+     * @param LoggerInterface $logger Logger for tracing actions.
+     * @param bool $asyncEnabled Enable asynchronous mode (RabbitMQ).
      */
     public function __construct(
         MessageBusInterface $messageBus,
@@ -39,26 +39,26 @@ final class AsyncGeolocator
     }
 
     /**
-     * Lance une géolocalisation asynchrone si activé,
-     * ou retourne immédiatement les données en cache si disponibles.
+     * Starts asynchronous geolocation if enabled,
+     * or immediately returns cached data if available.
      *
-     * @param string      $ip            Adresse IP à géolocaliser.
-     * @param string|null $forceProvider Nom du provider à forcer (optionnel).
+     * @param string $ip IP address to geolocate.
+     * @param string|null $forceProvider Provider name to force (optional).
      *
-     * @return array|null Tableau de données de géolocalisation, ou null si
-     *                    async désactivé ou données non encore en cache.
+     * @return array|null Geolocation data array, or null if
+     *                    async is disabled or data not yet cached.
      */
     public function geolocate(string $ip, ?string $forceProvider = null): ?array
     {
         // Si déjà en cache, on retourne directement
         if ($this->cache->has($ip)) {
-            $this->logger->debug("Données de géolocalisation trouvées en cache pour l'IP {$ip}");
+            $this->logger->debug("Geolocation data found in cache for IP {$ip}");
             return $this->cache->get($ip);
         }
 
         // Si l’asynchrone est désactivé, on retourne null
         if (!$this->asyncEnabled) {
-            $this->logger->debug("Mode asynchrone désactivé, pas de dispatch de message pour l'IP {$ip}");
+            $this->logger->debug("Async mode disabled, no message dispatch for IP {$ip}");
             return null;
         }
 
@@ -66,9 +66,7 @@ final class AsyncGeolocator
         $requestId = Uuid::uuid4()->toString();
         $message   = new GeolocateMessage($ip, $forceProvider, $requestId);
 
-        $this->logger->info(
-            "Envoi d'une requête de géolocalisation asynchrone pour l'IP {$ip}",
-            [
+        $this->logger->info("Sending asynchronous geolocation request for IP {$ip}", [
                 'request_id'     => $requestId,
                 'force_provider' => $forceProvider,
             ]
@@ -78,9 +76,7 @@ final class AsyncGeolocator
         try {
             $this->messageBus->dispatch($message);
         } catch (\Throwable $e) {
-            $this->logger->error(
-                'Échec du dispatch du message de géolocalisation',
-                [
+            $this->logger->error('Failed to dispatch geolocation message', [
                     'exception'  => $e,
                     'request_id' => $requestId,
                 ]

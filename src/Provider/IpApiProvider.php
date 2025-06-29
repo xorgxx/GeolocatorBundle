@@ -14,9 +14,9 @@ class IpApiProvider implements GeolocationProviderInterface
     private string $dsn;
     private LoggerInterface $logger;
     private bool $available = true;
-    private int $timeout = 3; // Timeout en secondes
+    private int $timeout = 3; // Timeout in seconds
     private int $errorCount = 0;
-    private const MAX_ERRORS = 3; // Nombre d'erreurs tolérées avant de considérer le provider comme non disponible
+    private const MAX_ERRORS = 3; // Maximum number of errors before considering the provider as unavailable
 
     public function __construct(HttpClientInterface $client, string $dsn, ?LoggerInterface $logger = null)
     {
@@ -33,7 +33,7 @@ class IpApiProvider implements GeolocationProviderInterface
     public function locate(string $ip): array
     {
         if (!$this->available) {
-            throw new \RuntimeException(sprintf('Le fournisseur %s est temporairement indisponible', $this->getName()));
+            throw new \RuntimeException(sprintf('Provider %s is temporarily unavailable', $this->getName()));
         }
 
         try {
@@ -46,27 +46,27 @@ class IpApiProvider implements GeolocationProviderInterface
             $statusCode = $response->getStatusCode();
 
             if ($statusCode >= 400) {
-                $this->handleError('Réponse HTTP erreur ' . $statusCode, $ip);
+                $this->handleError('HTTP error response ' . $statusCode, $ip);
                 if ($statusCode === 403 || $statusCode === 429) {
-                    // 403: Accès refusé, 429: Rate limit
-                    throw new \RuntimeException(sprintf('Le fournisseur %s a refusé l\'accès (code %d)', $this->getName(), $statusCode));
+                    // 403: Access denied, 429: Rate limit
+                    throw new \RuntimeException(sprintf('Provider %s has denied access (code %d)', $this->getName(), $statusCode));
                 }
                 return ['error' => true, 'code' => $statusCode];
             }
 
-            // Réinitialiser le compteur d'erreurs si la requête est réussie
+            // Reset error counter if request is successful
             $this->errorCount = 0;
             return $response->toArray();
 
         } catch (TransportExceptionInterface $e) {
-            $this->handleError('Erreur de transport: ' . $e->getMessage(), $ip);
+            $this->handleError('Transport error: ' . $e->getMessage(), $ip);
             return ['error' => true, 'message' => 'timeout'];
         } catch (HttpExceptionInterface $e) {
-            $this->handleError('Erreur HTTP: ' . $e->getMessage(), $ip);
+            $this->handleError('HTTP error: ' . $e->getMessage(), $ip);
             return ['error' => true, 'message' => $e->getMessage()];
         } catch (\Exception $e) {
-            $this->handleError('Exception générale: ' . $e->getMessage(), $ip);
-            return ['error' => true, 'message' => 'erreur_generale'];
+            $this->handleError('General exception: ' . $e->getMessage(), $ip);
+            return ['error' => true, 'message' => 'general_error'];
         }
     }
 
@@ -78,7 +78,7 @@ class IpApiProvider implements GeolocationProviderInterface
     private function handleError(string $message, string $ip): void
     {
         $this->errorCount++;
-        $this->logger->warning('Erreur avec le fournisseur {provider} pour IP {ip}: {message}', [
+        $this->logger->warning('Error with provider {provider} for IP {ip}: {message}', [
             'provider' => $this->getName(),
             'ip' => $ip,
             'message' => $message,
@@ -87,7 +87,7 @@ class IpApiProvider implements GeolocationProviderInterface
 
         if ($this->errorCount >= self::MAX_ERRORS) {
             $this->available = false;
-            $this->logger->error('Le fournisseur {provider} est marqué comme indisponible après {count} erreurs', [
+            $this->logger->error('Provider {provider} is marked as unavailable after {count} errors', [
                 'provider' => $this->getName(),
                 'count' => $this->errorCount
             ]);

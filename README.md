@@ -36,24 +36,24 @@ Pour aider le développeur à installer et configurer le bundle :
 
 ---
 
-## Guide complet
+## Complete Guide
 
-* Si vous développez en français, ouvrez [README.fr.md](README.fr.md)
+* If you develop in French, open [README.fr.md](README.fr.md)
 * If you prefer English, open [README.en.md](README.en.md)
 
-## Configuration avancée
+## Advanced Configuration
 
-Le fichier principal de configuration **`geolConfig.yaml`** (alias `config/packages/geolocator.yaml`) vous permet de personnaliser :
+The main configuration file **`geolConfig.yaml`** (alias `config/packages/geolocator.yaml`) allows you to customize:
 
-* Activation du bundle (`enabled`)
-* Modes de cache (`redis_enabled`, `cache_pool`)
-* Traitement synchrone ou asynchrone (`rabbit_enabled`, `messenger_transport`)
-* Paramètres de filtrage IP, pays, ASN, ISP, VPN, User-Agent, flood...
+* Bundle activation (`enabled`)
+* Cache modes (`redis_enabled`, `cache_pool`)
+* Synchronous or asynchronous processing (`rabbit_enabled`, `messenger_transport`)
+* IP filtering parameters, countries, ASN, ISP, VPN, User-Agent, flood...
 
-Pour plus de détails, consultez la documentation :
+For more details, consult the documentation:
 
-* Français : [docs/CONFIGURATION.md](docs/CONFIGURATION.md)
-* English : [docs/CONFIGURATION\_EN.md](docs/CONFIGURATION_EN.md)
+* French: [docs/CONFIGURATION.md](docs/CONFIGURATION.md)
+* English: [docs/CONFIGURATION\_EN.md](docs/CONFIGURATION_EN.md)
 
 ---
 

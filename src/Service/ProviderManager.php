@@ -4,11 +4,12 @@ declare(strict_types=1);
 namespace GeolocatorBundle\Service;
 
 use GeolocatorBundle\Provider\GeolocationProviderInterface;
+use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 
 /**
- * Gère la rotation (round-robin) et la disponibilité
- * des fournisseurs de géolocalisation IP.
+ * Manages the rotation (round-robin) and availability
+ * of IP geolocation providers.
  */
 final class ProviderManager
 {
@@ -24,7 +25,7 @@ final class ProviderManager
      * @param LoggerInterface                        $logger     Logger PSR-3.
      * @param int                                    $maxRetries Nombre max. de tentatives (≥ 1).
      *
-     * @throws \InvalidArgumentException Si la configuration est invalide.
+     * @throws InvalidArgumentException Si la configuration est invalide.
      */
     public function __construct(
         iterable $providers,
@@ -33,37 +34,34 @@ final class ProviderManager
     ) {
         $this->providers = iterator_to_array($providers);
         if (empty($this->providers)) {
-            throw new \InvalidArgumentException('Aucun provider de géolocalisation n’est configuré.');
+            throw new InvalidArgumentException('Aucun provider de géolocalisation n’est configuré.');
         }
         foreach ($this->providers as $p) {
             if (!$p instanceof GeolocationProviderInterface) {
-                throw new \InvalidArgumentException(sprintf(
-                    'Le provider doit implémenter GeolocationProviderInterface, %s fourni.',
-                    is_object($p) ? get_class($p) : gettype($p)
+                throw new InvalidArgumentException(sprintf('Provider must implement GeolocationProviderInterface, %s given.', is_object($p) ? get_class($p) : gettype($p)
                 ));
             }
         }
         if ($maxRetries < 1) {
-            throw new \InvalidArgumentException('maxRetries doit être ≥ 1.');
+            throw new InvalidArgumentException('maxRetries doit être ≥ 1.');
         }
 
         $this->logger     = $logger;
         $this->maxRetries = $maxRetries;
     }
 
-    /**
-     * Renvoie un provider disponible selon la stratégie round-robin,
-     * en ignorant ceux déjà essayés.
+/**
+     * Returns a provider available according to the Round-Robin strategy,
+     * ignoring those already tried.
      *
-     * @return GeolocationProviderInterface
+     * @RETurn geolocationProviderinterface
      *
-     * @throws \RuntimeException Si tous les providers ont échoué ou sont indisponibles.
      */
     public function getNextProvider(): GeolocationProviderInterface
     {
         if (count($this->triedProviders) >= count($this->providers)) {
-            $this->logger->critical('Tous les providers ont déjà été essayés.');
-            throw new \RuntimeException('Aucun provider de géolocalisation disponible.');
+            $this->logger->critical('All providers have already been tried.');
+            throw new \RuntimeException('No geolocation provider available.');
         }
 
         $start = $this->currentIndex;
@@ -83,9 +81,7 @@ final class ProviderManager
                 return $provider;
             }
 
-            $this->logger->info(
-                'Provider {provider} indisponible, passage au suivant.',
-                ['provider' => $name]
+            $this->logger->info('Provider {provider} unavailable, moving to next.', ['provider' => $name]
             );
             $this->triedProviders[] = $name;
 
@@ -94,12 +90,12 @@ final class ProviderManager
             }
         }
 
-        $this->logger->critical('Aucun provider disponible après rotation complète.');
-        throw new \RuntimeException('Aucun provider de géolocalisation disponible.');
+        $this->logger->critical('No provider available after complete rotation.');
+        throw new \RuntimeException('No geolocation provider available.');
     }
 
     /**
-     * Marque un provider comme ayant déjà été essayé.
+     * Mark a provider as having already been tried.
      */
     public function markProviderTried(GeolocationProviderInterface $provider): void
     {
@@ -110,7 +106,7 @@ final class ProviderManager
     }
 
     /**
-     * Réinitialise l’état des essais et l’index de rotation.
+     * Reset the statement of the tests and the rotation index.
      */
     public function resetTriedProviders(): void
     {
@@ -119,12 +115,12 @@ final class ProviderManager
     }
 
     /**
-     * Récupère un provider par son nom.
+     * Recovers a provider by name.
      *
      * @param string $name
      * @return GeolocationProviderInterface
      *
-     * @throws \InvalidArgumentException Si non trouvé.
+     * @throws InvalidArgumentException If not found.
      */
     public function getProviderByName(string $name): GeolocationProviderInterface
     {
@@ -133,18 +129,18 @@ final class ProviderManager
                 return $provider;
             }
         }
-        throw new \InvalidArgumentException(sprintf('Provider « %s » non configuré.', $name));
+        throw new InvalidArgumentException(sprintf('Provider "%s" not configured.', $name));
     }
 
     /**
-     * Ajuste le nombre maximal de tentatives.
+     * Adjust the maximum number of attempts.
      *
-     * @throws \InvalidArgumentException Si < 1.
+     * @throws InvalidArgumentException Si < 1.
      */
     public function setMaxRetries(int $maxRetries): void
     {
         if ($maxRetries < 1) {
-            throw new \InvalidArgumentException('maxRetries doit être ≥ 1.');
+            throw new InvalidArgumentException('maxRetries must be ≥ 1.');
         }
         $this->maxRetries = $maxRetries;
     }

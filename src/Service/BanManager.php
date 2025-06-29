@@ -10,7 +10,7 @@ use DateTimeZone;
 use InvalidArgumentException;
 
 /**
- * Gestion des bans d’IP en session avec expiration automatique.
+ * Management of IP banns in session with automatic expiration.
  */
 final class BanManager
 {
@@ -19,7 +19,7 @@ final class BanManager
     private const DEFAULT_DURATION_SECONDS = 3600;
 
     /**
-     * @param SessionInterface $session Stockage des bans en session HTTP.
+     * @param SessionInterface $session Storage of banns in HTTP session.
      */
     public function __construct(SessionInterface $session)
     {
@@ -27,18 +27,18 @@ final class BanManager
     }
 
     /**
-     * Ajoute un ban pour une IP donnée.
+     * Adds a ban for a given IP address.
      *
-     * @param string $ip        Adresse IP à bannir.
-     * @param string $reason    Raison du ban.
-     * @param string $duration  Durée du ban (ex. "1 hour", "30 minutes", "P1DT2H").
+     * @param string $ip IP address to ban.
+     * @param string $reason Ban reason.
+     * @param string $duration Ban duration (ex. "1 hour", "30 minutes", "P1DT2H").
      *
-     * @throws InvalidArgumentException Si l'IP ou la durée est invalide.
+     * @throws InvalidArgumentException If IP or duration is invalid.
      */
     public function addBan(string $ip, string $reason, string $duration): void
     {
         if (!filter_var($ip, FILTER_VALIDATE_IP)) {
-            throw new InvalidArgumentException(sprintf('IP invalide : %s', $ip));
+            throw new InvalidArgumentException(sprintf('Invalid IP address: %s', $ip));
         }
 
         $durationSeconds = $this->parseDurationToSeconds($duration);
@@ -54,10 +54,11 @@ final class BanManager
     }
 
     /**
-     * Vérifie si une IP est bannie.
+     * Check if an IP is banned.
      *
-     * @param string $ip Adresse IP à vérifier.
-     * @return bool      True si la ban est active, false sinon.
+     * @Param String $ip IP address to check.
+     * @RETURN BOOL TRUE If the ban is active, false otherwise.
+     * @throws \Exception
      */
     public function isBanned(string $ip): bool
     {
@@ -80,8 +81,7 @@ final class BanManager
     }
 
     /**
-     * Liste tous les bans.
-     *
+     * List all banns.
      * @return array<string, array{reason: string, expires_at: string}>
      */
     public function listBans(): array
@@ -90,9 +90,9 @@ final class BanManager
     }
 
     /**
-     * Retire le ban d'une IP.
+     * Remove the ban from an IP.
      *
-     * @param string $ip Adresse IP à débannir.
+     * @Param String $IP IP address to Dépanner.
      */
     public function removeBan(string $ip): void
     {
@@ -104,15 +104,15 @@ final class BanManager
     }
 
     /**
-     * Convertit une durée sous forme de chaîne en secondes.
+     * Converts a duration string to seconds.
      *
-     * Supporte :
+     * Supports:
      *  - "10 seconds", "5 minutes", "2 hours", "1 day"
      *  - ISO 8601 durations (ex. "P1DT2H30M")
      *
      * @param string $duration
      * @return int
-     * @throws InvalidArgumentException Si le format est invalide.
+     * @throws InvalidArgumentException If format is invalid.
      */
     private function parseDurationToSeconds(string $duration): int
     {
@@ -152,7 +152,7 @@ final class BanManager
             return $seconds > 0 ? $seconds : self::DEFAULT_DURATION_SECONDS;
         }
 
-        throw new InvalidArgumentException(sprintf('Format de durée invalide : "%s".', $duration));
+        throw new InvalidArgumentException(sprintf('Invalid duration format: "%s".', $duration));
     }
 
     private function getBans(): array

@@ -3,12 +3,13 @@ declare(strict_types=1);
 
 namespace GeolocatorBundle\Service;
 
+use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 /**
- * Envoie des notifications JSON à une liste de webhooks configurés.
+ * Sends JSON notifications to a list of configured webhooks.
  */
 final class WebhookNotifier
 {
@@ -18,11 +19,11 @@ final class WebhookNotifier
     private LoggerInterface $logger;
 
     /**
-     * @param HttpClientInterface $httpClient  Client HTTP pour envoyer les requêtes.
-     * @param string[]            $webhookUrls Liste d’URLs de webhooks.
-     * @param LoggerInterface     $logger      Logger PSR-3 pour tracer succès/erreurs.
+     * @Param httpclientinterface $httpclient client http to send requests.
+     * @Param String [] $webhookurls Urls de Webhooks.
+     * @Param Loggerinterface $Logger PSR-3 to trace success/errors.
      *
-     * @throws \InvalidArgumentException Si une URL est invalide.
+     * @throws invalidargumentexception if an url is invalid.
      */
     public function __construct(
         HttpClientInterface $httpClient,
@@ -31,9 +32,7 @@ final class WebhookNotifier
     ) {
         foreach ($webhookUrls as $url) {
             if (!is_string($url) || !filter_var($url, FILTER_VALIDATE_URL)) {
-                throw new \InvalidArgumentException(sprintf(
-                    'URL de webhook invalide : %s',
-                    is_scalar($url) ? (string)$url : gettype($url)
+                throw new InvalidArgumentException(sprintf('Invalid webhook URL: %s', is_scalar($url) ? (string)$url : gettype($url)
                 ));
             }
         }
@@ -44,9 +43,7 @@ final class WebhookNotifier
     }
 
     /**
-     * Envoie le payload JSON à chacun des webhooks.
-     *
-     * @param string $payload Chaîne JSON à transmettre en POST.
+     * Send the Payload JSON to each webhooks.
      */
     public function notify(string $payload): void
     {
@@ -60,19 +57,19 @@ final class WebhookNotifier
 
                 $statusCode = $response->getStatusCode();
                 if ($statusCode >= 400) {
-                    $this->logger->error('Webhook retourné un code d’erreur', [
+                    $this->logger->error('Webhook returned an error code', [
                         'url'        => $url,
                         'statusCode' => $statusCode,
                         'content'    => $response->getContent(false),
                     ]);
                 } else {
-                    $this->logger->info('Webhook notifié avec succès', [
+                    $this->logger->info('Webhook successfully notified', [
                         'url'        => $url,
                         'statusCode' => $statusCode,
                     ]);
                 }
             } catch (TransportExceptionInterface $e) {
-                $this->logger->error('Échec de l’envoi du webhook', [
+                $this->logger->error('Failure to send the webhook', [
                     'url'       => $url,
                     'exception' => $e,
                 ]);

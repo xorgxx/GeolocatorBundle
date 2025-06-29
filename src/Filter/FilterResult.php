@@ -18,7 +18,7 @@ final class FilterResult
     public function __construct(bool $blocked, string $reason = '', ?string $country = null)
     {
         $this->blocked = $blocked;
-        $this->reason  = $reason;
+        $this->reason = $reason;
         $this->country = $country;
     }
 

@@ -1,4 +1,5 @@
 <?php
+// src/Filter/FilterChain.php
 declare(strict_types=1);
 
 namespace GeolocatorBundle\Filter;
@@ -6,8 +7,8 @@ namespace GeolocatorBundle\Filter;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * Parcourt tous les services taggés FilterInterface
- * et renvoie le premier FilterResult bloquant (ou null si tous passent).
+ * Processes all services tagged with FilterInterface
+ * and returns the first blocking FilterResult (or null if all pass).
  */
 final class FilterChain
 {
@@ -15,7 +16,7 @@ final class FilterChain
     private iterable $filters;
 
     /**
-     * @param iterable<FilterInterface> $filters Injecté via tagged_iterator neox.geofilter.filter
+     * @param iterable<FilterInterface> $filters Injected via tagged_iterator neox.geofilter.filter
      */
     public function __construct(iterable $filters)
     {
@@ -23,8 +24,8 @@ final class FilterChain
     }
 
     /**
-     * Applique tous les filtres et renvoie un résultat bloquant,
-     * ou null si aucun filtre ne bloque.
+     * Applies all filters and returns a FilterResult if blocking,
+     * or null if no filter blocks.
      */
     public function process(Request $request, array $geoData): ?FilterResult
     {

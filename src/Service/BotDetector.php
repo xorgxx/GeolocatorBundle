@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace GeolocatorBundle\Service;
 
 /**
- * Détecte si un User-Agent correspond à un bot et, si activé, déclenche un challenge.
+ * Detects if a User-Agent corresponds to a bot and, if enabled, triggers a challenge.
  */
 final class BotDetector
 {
@@ -21,7 +21,7 @@ final class BotDetector
     {
         foreach ($botPatterns as $pattern) {
             if (!is_string($pattern) || $pattern === '') {
-                throw new \InvalidArgumentException('Chaque botPattern doit être une chaîne non vide.');
+                throw new \InvalidArgumentException('Each botPattern must be a non-empty string.');
             }
         }
         $this->botPatterns   = $botPatterns;
