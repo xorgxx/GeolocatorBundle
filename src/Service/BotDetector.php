@@ -1,28 +1,49 @@
 <?php
+declare(strict_types=1);
 
 namespace GeolocatorBundle\Service;
 
-class BotDetector
+/**
+ * Détecte si un User-Agent correspond à un bot et, si activé, déclenche un challenge.
+ */
+final class BotDetector
 {
     private array $botPatterns;
-    private bool $challengeMode;
+    private bool  $challengeMode;
 
+    /**
+     * @param string[] $botPatterns   Liste de fragments de User-Agent à détecter comme bots.
+     * @param bool     $challengeMode Active le mode challenge (ex. CAPTCHA) pour les bots détectés.
+     *
+     * @throws \InvalidArgumentException Si un pattern n’est pas une chaîne non vide.
+     */
     public function __construct(array $botPatterns = [], bool $challengeMode = false)
     {
-        $this->botPatterns = $botPatterns;
+        foreach ($botPatterns as $pattern) {
+            if (!is_string($pattern) || $pattern === '') {
+                throw new \InvalidArgumentException('Chaque botPattern doit être une chaîne non vide.');
+            }
+        }
+        $this->botPatterns   = $botPatterns;
         $this->challengeMode = $challengeMode;
     }
 
+    /**
+     * Indique si le User-Agent correspond à un bot connu.
+     */
     public function isBot(string $userAgent): bool
     {
         foreach ($this->botPatterns as $pattern) {
-            if (stripos($userAgent, $pattern) !== false) {
+            if (false !== stripos($userAgent, $pattern)) {
                 return true;
             }
         }
         return false;
     }
 
+    /**
+     * Indique si, en mode challenge, ce User-Agent doit être mis au défi.
+     */
     public function shouldChallenge(string $userAgent): bool
     {
         return $this->challengeMode && $this->isBot($userAgent);

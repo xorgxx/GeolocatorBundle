@@ -26,3 +26,7 @@ geolocator:
   allowedAsns: []
   blockedIsps: []
   allowedIsps: []
+  
+  geolocator.webhooks :
+    - 'https://hooks.example.com/endpoint1'
+    - 'https://hooks.example.com/endpoint2'

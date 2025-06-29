@@ -7,7 +7,7 @@ services:
     GeolocatorBundle\Service\:
         resource: '../../Service'
     GeolocatorBundle\EventListener\:
-        resource: '../../EventListener'
+        resource: '../../EventSubscriber'
         tags:
             - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest }
     GeolocatorBundle\Export\:
@@ -15,8 +15,31 @@ services:
     GeolocatorBundle\Command\:
         resource: '../../Command'
         tags: ['console.command']
+    
+    GeolocatorBundle\Filter\:
+        resource: '../src/Filter'
+        tags: ['neox.geofilter.filter']
+    
+    GeolocatorBundle\Service\WebhookNotifier:
+        arguments:
+            $httpClient: '@http_client'
+            $webhookUrls: '%geolocator.webhooks%'
+            $logger: '@logger'
+    
+    # On regroupe tous les filtres derrière FilterChain
+    GeolocatorBundle\Filter\FilterChain :
+        arguments :
+            $filters : !tagged_iterator neox.geofilter.filter
 
 
+    GeolocatorBundle\DataCollector\GeolocatorDataCollector:
+        arguments:
+            $asyncLocator: '@GeolocatorBundle\Service\AsyncGeolocator'
+        tags:
+            - { name: data_collector, template: '@Geolocator/collector/geolocator.html.twig', id: geolocator }
+
+
+            
     GeolocatorBundle\EventListener\GeoFilterListener:
         arguments:
             $filters: !tagged_iterator geofilter.filter
@@ -39,6 +62,3 @@ services:
         arguments:
             $botPatterns: '%env(json:BOT_PATTERNS)%'
             $challengeMode: '%env(bool:BOT_CHALLENGE)%'
-    GeolocatorBundle\Service\WebhookNotifier:
-        arguments:
-            $webhooks: '%env(json:WEBHOOK_URLS)%'

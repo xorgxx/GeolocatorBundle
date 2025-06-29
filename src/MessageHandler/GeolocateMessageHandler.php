@@ -1,19 +1,27 @@
 <?php
+declare(strict_types=1);
 
 namespace GeolocatorBundle\MessageHandler;
 
 use GeolocatorBundle\Message\GeolocateMessage;
+use GeolocatorBundle\Provider\GeolocationProviderInterface;
 use GeolocatorBundle\Service\ProviderManager;
 use GeolocatorBundle\Service\GeolocationCache;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
+/**
+ * Traite en back-ground un GeolocateMessage :
+ *   - sélectionne un provider (optionnellement forcé)
+ *   - récupère les données
+ *   - les met en cache
+ */
 #[AsMessageHandler]
-class GeolocateMessageHandler
+final class GeolocateMessageHandler
 {
-    private ProviderManager $providerManager;
+    private ProviderManager  $providerManager;
     private GeolocationCache $cache;
-    private LoggerInterface $logger;
+    private LoggerInterface  $logger;
 
     public function __construct(
         ProviderManager $providerManager,
@@ -21,52 +29,49 @@ class GeolocateMessageHandler
         LoggerInterface $logger
     ) {
         $this->providerManager = $providerManager;
-        $this->cache = $cache;
-        $this->logger = $logger;
+        $this->cache           = $cache;
+        $this->logger          = $logger;
     }
 
     public function __invoke(GeolocateMessage $message): void
     {
-        try {
-            $ip = $message->getIp();
-            $requestId = $message->getRequestId();
-            $this->logger->info("Traitement asynchrone de la géolocalisation pour l'IP {$ip}", [
-                'request_id' => $requestId
-            ]);
+        $ip        = $message->getIp();
+        $requestId = $message->getRequestId();
 
-            // Si déjà dans le cache, ne pas retraiter
+        $this->logger->info('Démarrage géolocalisation asynchrone', [
+            'request_id' => $requestId,
+            'ip'         => $ip,
+        ]);
+
+        try {
             if ($this->cache->has($ip)) {
-                $this->logger->info("IP {$ip} déjà en cache, traitement asynchrone ignoré", [
-                    'request_id' => $requestId
+                $this->logger->info('Données déjà en cache, skip', [
+                    'request_id' => $requestId,
+                    'ip'         => $ip,
                 ]);
                 return;
             }
 
-            // Sélection du provider (forcé ou via round-robin)
-            if ($message->getForceProvider()) {
-                // Logique pour sélectionner un provider spécifique serait à implémenter
-                $provider = $this->providerManager->getNextProvider();
-            } else {
-                $provider = $this->providerManager->getNextProvider();
-            }
+            // Choix du provider (forcé ou non)
+            $provider = $message->getForceProvider() !== null
+                ? $this->providerManager->getProviderByName($message->getForceProvider())
+                : $this->providerManager->getNextProvider();
 
-            // Obtention des données de géolocalisation
             $geoData = $provider->locate($ip);
 
-            // Mise en cache des résultats
             $this->cache->set($ip, $geoData);
 
-            $this->logger->info("Géolocalisation asynchrone réussie pour l'IP {$ip}", [
+            $this->logger->info('Géolocalisation réussie', [
                 'request_id' => $requestId,
-                'provider' => $provider->getName(),
-                'country' => $geoData['country'] ?? 'unknown'
+                'ip'         => $ip,
+                'provider'   => $provider->getName(),
+                'country'    => $geoData['country'] ?? 'unknown',
             ]);
         } catch (\Throwable $e) {
-            $this->logger->error("Erreur lors de la géolocalisation asynchrone: {$e->getMessage()}", [
-                'request_id' => $message->getRequestId(),
-                'ip' => $message->getIp(),
-                'exception' => get_class($e),
-                'trace' => $e->getTraceAsString()
+            $this->logger->error('Erreur géoloc asynchrone', [
+                'request_id' => $requestId,
+                'ip'         => $ip,
+                'error'      => $e->getMessage(),
             ]);
         }
     }

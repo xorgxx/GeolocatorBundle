@@ -1,113 +1,151 @@
 <?php
+declare(strict_types=1);
 
 namespace GeolocatorBundle\Service;
 
 use GeolocatorBundle\Provider\GeolocationProviderInterface;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 
-class ProviderManager
+/**
+ * Gère la rotation (round-robin) et la disponibilité
+ * des fournisseurs de géolocalisation IP.
+ */
+final class ProviderManager
 {
     /** @var GeolocationProviderInterface[] */
     private array $providers;
-    private int $currentIndex = 0;
-    private const NO_PROVIDERS_CONFIGURED_MESSAGE = 'No geolocation providers configured.';
+    private int   $currentIndex   = 0;
+    private int   $maxRetries;
     private LoggerInterface $logger;
-    private int $maxRetries;
     private array $triedProviders = [];
 
+    /**
+     * @param iterable<GeolocationProviderInterface> $providers  Providers configurés.
+     * @param LoggerInterface                        $logger     Logger PSR-3.
+     * @param int                                    $maxRetries Nombre max. de tentatives (≥ 1).
+     *
+     * @throws \InvalidArgumentException Si la configuration est invalide.
+     */
     public function __construct(
-        iterable $geolocationProviders,
-        ?LoggerInterface $logger = null,
+        iterable $providers,
+        LoggerInterface $logger,
         int $maxRetries = 3
     ) {
-        $this->providers = iterator_to_array($geolocationProviders);
-        $this->logger = $logger ?? new NullLogger();
+        $this->providers = iterator_to_array($providers);
+        if (empty($this->providers)) {
+            throw new \InvalidArgumentException('Aucun provider de géolocalisation n’est configuré.');
+        }
+        foreach ($this->providers as $p) {
+            if (!$p instanceof GeolocationProviderInterface) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Le provider doit implémenter GeolocationProviderInterface, %s fourni.',
+                    is_object($p) ? get_class($p) : gettype($p)
+                ));
+            }
+        }
+        if ($maxRetries < 1) {
+            throw new \InvalidArgumentException('maxRetries doit être ≥ 1.');
+        }
+
+        $this->logger     = $logger;
         $this->maxRetries = $maxRetries;
     }
 
     /**
-     * Retourne le prochain fournisseur disponible dans la liste
+     * Renvoie un provider disponible selon la stratégie round-robin,
+     * en ignorant ceux déjà essayés.
+     *
+     * @return GeolocationProviderInterface
+     *
+     * @throws \RuntimeException Si tous les providers ont échoué ou sont indisponibles.
      */
     public function getNextProvider(): GeolocationProviderInterface
-    {        
-        if (empty($this->providers)) {
-            throw new \RuntimeException(self::NO_PROVIDERS_CONFIGURED_MESSAGE);
-        }
-
-        // Si tous les fournisseurs ont été essayés sans succès
+    {
         if (count($this->triedProviders) >= count($this->providers)) {
-            $this->logger->critical('Tous les fournisseurs de géolocalisation ont été essayés sans succès');
-            throw new \RuntimeException('Tous les fournisseurs de géolocalisation sont indisponibles');
+            $this->logger->critical('Tous les providers ont déjà été essayés.');
+            throw new \RuntimeException('Aucun provider de géolocalisation disponible.');
         }
 
-        $startIndex = $this->currentIndex;
-        $provider = null;
+        $start = $this->currentIndex;
+        while (true) {
+            $provider = $this->providers[$this->currentIndex % count($this->providers)];
+            $this->currentIndex = ($this->currentIndex + 1) % count($this->providers);
 
-        // Cherche le prochain fournisseur disponible
-        do {
-            $candidat = $this->selectProviderByIndex($this->currentIndex);
-            $this->currentIndex++;
-
-            // Vérifie si le fournisseur est déjà dans la liste des essais
-            $providerName = $candidat->getName();
-            if (in_array($providerName, $this->triedProviders)) {
+            $name = $provider->getName();
+            if (in_array($name, $this->triedProviders, true)) {
+                if ($this->currentIndex === $start) {
+                    break;
+                }
                 continue;
             }
 
-            // Vérifie si le fournisseur est disponible
-            if ($candidat->isAvailable()) {
-                $provider = $candidat;
+            if ($provider->isAvailable()) {
+                return $provider;
+            }
+
+            $this->logger->info(
+                'Provider {provider} indisponible, passage au suivant.',
+                ['provider' => $name]
+            );
+            $this->triedProviders[] = $name;
+
+            if ($this->currentIndex === $start) {
                 break;
-            } else {
-                $this->logger->info('Le fournisseur {provider} est marqué comme indisponible, passage au suivant', [
-                    'provider' => $providerName
-                ]);
-                $this->triedProviders[] = $providerName;
             }
+        }
 
-            // Si on a bouclé sur tous les fournisseurs sans en trouver un disponible
-            if ($this->currentIndex % count($this->providers) === $startIndex % count($this->providers)) {
-                $this->logger->critical('Aucun fournisseur de géolocalisation disponible');
-                throw new \RuntimeException('Aucun fournisseur de géolocalisation disponible');
-            }
-
-        } while ($provider === null);
-
-        return $provider;
+        $this->logger->critical('Aucun provider disponible après rotation complète.');
+        throw new \RuntimeException('Aucun provider de géolocalisation disponible.');
     }
 
     /**
-     * Marque un fournisseur comme ayant été essayé
+     * Marque un provider comme ayant déjà été essayé.
      */
     public function markProviderTried(GeolocationProviderInterface $provider): void
     {
-        $providerName = $provider->getName();
-        if (!in_array($providerName, $this->triedProviders)) {
-            $this->triedProviders[] = $providerName;
+        $name = $provider->getName();
+        if (!in_array($name, $this->triedProviders, true)) {
+            $this->triedProviders[] = $name;
         }
     }
 
     /**
-     * Réinitialise la liste des fournisseurs essayés
+     * Réinitialise l’état des essais et l’index de rotation.
      */
     public function resetTriedProviders(): void
     {
         $this->triedProviders = [];
+        $this->currentIndex   = 0;
     }
 
     /**
-     * Permet de réinitialiser l'index du provider
-     * Utile en mode asynchrone pour garantir que les workers commencent toujours au même point
+     * Récupère un provider par son nom.
+     *
+     * @param string $name
+     * @return GeolocationProviderInterface
+     *
+     * @throws \InvalidArgumentException Si non trouvé.
      */
-    public function resetIndex(): void
+    public function getProviderByName(string $name): GeolocationProviderInterface
     {
-        $this->currentIndex = 0;
-        $this->resetTriedProviders();
+        foreach ($this->providers as $provider) {
+            if ($provider->getName() === $name) {
+                return $provider;
+            }
+        }
+        throw new \InvalidArgumentException(sprintf('Provider « %s » non configuré.', $name));
     }
 
-    private function selectProviderByIndex(int $index): GeolocationProviderInterface
+    /**
+     * Ajuste le nombre maximal de tentatives.
+     *
+     * @throws \InvalidArgumentException Si < 1.
+     */
+    public function setMaxRetries(int $maxRetries): void
     {
-        return $this->providers[ $index % count($this->providers) ];
+        if ($maxRetries < 1) {
+            throw new \InvalidArgumentException('maxRetries doit être ≥ 1.');
+        }
+        $this->maxRetries = $maxRetries;
     }
 }
