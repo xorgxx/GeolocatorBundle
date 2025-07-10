@@ -10,49 +10,53 @@ services:
         autowire: true
         autoconfigure: true
         public: false
-    
+
     # --- Import des services principaux par domaine ---
     GeolocatorBundle\Service\:
         resource: '../../Service'
-    
+
     GeolocatorBundle\Provider\:
         resource: '../../Provider'
-    
+
     GeolocatorBundle\Export\:
         resource: '../../Export'
-    
+
     GeolocatorBundle\Command\:
         resource: '../../Command'
         tags: ['console.command']
-    
+
     # --- Écouteurs et abonnés d'événements ---
     GeolocatorBundle\EventSubscriber\:
         resource: '../../EventSubscriber'
         tags:
             - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest }
-    
+
     # --- Filtres géographiques ---
     GeolocatorBundle\Filter\:
-        resource: '../src/Filter'
+        resource: '../../Filter'
         tags: ['neox.geofilter.filter']
-    
+
     # --- Déclarations explicites pour services spécifiques ---
     GeolocatorBundle\Service\WebhookNotifier:
         arguments:
             $httpClient: '@http_client'
             $webhookUrls: '%geolocator.webhooks%'
             $logger: '@logger'
-    
+
     GeolocatorBundle\Filter\FilterChain:
         arguments:
             $filters: !tagged_iterator neox.geofilter.filter
-    
+
+    GeolocatorBundle\Service\AsyncGeolocator :
+        arguments :
+            $transport : '%geolocator.messenger_transport%'
+
     GeolocatorBundle\DataCollector\GeolocatorDataCollector:
         arguments:
             $asyncLocator: '@GeolocatorBundle\Service\AsyncGeolocator'
         tags:
             - { name: data_collector, template: '@Geolocator/collector/geolocator.html.twig', id: geolocator }
-    
+
     GeolocatorBundle\EventSubscriber\GeoFilterSubscriber:
         arguments:
             $ipResolver: '@GeolocatorBundle\Service\IpResolver'
@@ -61,18 +65,22 @@ services:
             $filterChain: '@GeolocatorBundle\Filter\FilterChain'
             $eventDispatcher: '@event_dispatcher'
             $params: '@parameter_bag'
-    
+
     GeolocatorBundle\Service\IpResolver:
         arguments:
-            $trustedProxiesCsv: '%geolocator.trusted_proxies%'
-    
+            $filterFlags: '%geolocator.ip_filter_flags%'
+
     GeolocatorBundle\Service\GeolocationCache:
         arguments:
             $cachePool: '@cache.app'
             $providerManager: '@GeolocatorBundle\Service\ProviderManager'
             $ttl: '%geolocator.cache_ttl%'
-    
+
     GeolocatorBundle\Service\BotDetector:
         arguments:
             $botPatterns: '%geolocator.bot_patterns%'
             $challengeMode: '%geolocator.bot_challenge_enabled%'
+
+    GeolocatorBundle\Service\BanManager:
+        arguments:
+            $session: '@session'

@@ -8,8 +8,10 @@ geolocator:
   simulate: false
   ban_duration: '3 hours'
   ping_threshold: 10
-
-  # Filtrage IP
+  ip_filter_flags: 8224 # 8224 = FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+  messenger_transport: null # ou '' pour désactiver l'envoi async
+          
+    # Filtrage IP
   blocked_crawlers: ['Googlebot', 'AhrefsBot']
   blockedIps: []
   blockedRanges: []
@@ -26,7 +28,7 @@ geolocator:
   allowedAsns: []
   blockedIsps: []
   allowedIsps: []
-  
+
   geolocator.webhooks :
     - 'https://hooks.example.com/endpoint1'
     - 'https://hooks.example.com/endpoint2'

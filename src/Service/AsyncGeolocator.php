@@ -18,24 +18,24 @@ final class AsyncGeolocator
     private MessageBusInterface $messageBus;
     private GeolocationCache $cache;
     private LoggerInterface $logger;
-    private bool $asyncEnabled;
+    private bool $transport;
 
     /**
      * @param MessageBusInterface $messageBus Messenger bus for dispatching messages.
      * @param GeolocationCache $cache PSR-6 cache for storing results.
      * @param LoggerInterface $logger Logger for tracing actions.
-     * @param bool $asyncEnabled Enable asynchronous mode (RabbitMQ).
+     * @param bool $transport Enable asynchronous mode (RabbitMQ).
      */
     public function __construct(
         MessageBusInterface $messageBus,
         GeolocationCache $cache,
         LoggerInterface $logger,
-        bool $asyncEnabled
+        bool $transport
     ) {
         $this->messageBus   = $messageBus;
         $this->cache        = $cache;
         $this->logger       = $logger;
-        $this->asyncEnabled = $asyncEnabled;
+        $this->asyncEnabled = $transport;
     }
 
     /**

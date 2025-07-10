@@ -8,6 +8,7 @@
   "require": {
     "php": ">=8.2",
     "symfony/framework-bundle": "^7.3",
+    "symfony/http-foundation" : "^7.3",
     "geoip2/geoip2": "^2.0",
     "symfony/http-client": "^7.3",
     "symfony/messenger": "^7.3",

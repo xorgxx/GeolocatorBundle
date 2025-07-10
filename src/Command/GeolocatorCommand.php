@@ -2,7 +2,7 @@
 // src/Command/GeolocatorCommand.php
 declare(strict_types=1);
 
-namespace App\Command;
+namespace GeolocatorBundle\Command;
 
 use GeolocatorBundle\Service\AsyncGeolocator;
 use GeolocatorBundle\Service\GeolocatorService;
