@@ -50,6 +50,10 @@ final class GeoFilterSubscriber implements EventSubscriberInterface
 
     public function onKernelRequest(RequestEvent $event): void
     {
+        if (!$this->config['enabled']) {
+            return; // Ne fait rien
+        }
+
         if (!$event->isMainRequest()) {
             return;
         }

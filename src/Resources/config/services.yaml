@@ -1,9 +1,9 @@
 parameters:
-    geolocator.webhooks: '%env(GEOLOCATOR_WEBHOOKS)%'
-    geolocator.cache_ttl: '%env(int:GEOLOCATOR_CACHE_TTL)%'
-    geolocator.trusted_proxies: '%env(TRUSTED_PROXIES)%'
-    geolocator.bot_patterns: '%env(json:BOT_PATTERNS)%'
-    geolocator.bot_challenge_enabled: '%env(bool:BOT_CHALLENGE)%'
+#    geolocator.webhooks: '%env(GEOLOCATOR_WEBHOOKS)%'
+#    geolocator.cache_ttl: '%env(int:GEOLOCATOR_CACHE_TTL)%'
+#    geolocator.trusted_proxies: '%env(TRUSTED_PROXIES)%'
+#    geolocator.bot_patterns: '%env(json:BOT_PATTERNS)%'
+#    geolocator.bot_challenge_enabled: '%env(bool:BOT_CHALLENGE)%'
 
 services:
     _defaults:

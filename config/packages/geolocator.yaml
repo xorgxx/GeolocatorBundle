@@ -3,6 +3,7 @@ geolocator:
   redis_enabled: false      # false: mode simple (filesystem cache), true: utilise Redis pour cache
   rabbit_enabled: false     # false: mode synchrone, true: utilise RabbitMQ via Messenger
   cache_pool: 'cache.app'   # pool PSR-6 (filesystem ou Redis)
+  cache_ttl: 300
   redirect_route: 'app_blocked'
   use_custom_blocked_page: true
   simulate: false

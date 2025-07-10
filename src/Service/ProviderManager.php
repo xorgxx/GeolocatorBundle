@@ -32,6 +32,7 @@ final class ProviderManager
         LoggerInterface $logger,
         int $maxRetries = 3
     ) {
+
         $this->providers = iterator_to_array($providers);
         if (empty($this->providers)) {
             throw new InvalidArgumentException('Aucun provider de géolocalisation n’est configuré.');
