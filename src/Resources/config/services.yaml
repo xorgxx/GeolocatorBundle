@@ -81,6 +81,17 @@ services:
             $botPatterns: '%geolocator.bot_patterns%'
             $challengeMode: '%geolocator.bot_challenge_enabled%'
 
+    session: '@Symfony\Component\HttpFoundation\RequestStack'
+
     GeolocatorBundle\Service\BanManager:
         arguments:
-            $session: '@session'
+            - '@session'
+
+    GeolocatorBundle\Service\ProviderManager:
+        arguments:
+            $providers: !tagged_iterator geolocator.provider
+
+    # Configuration explicite pour FilterResult
+    GeolocatorBundle\Filter\FilterResult:
+        arguments:
+            $blocked: false # Valeur par défaut

@@ -29,6 +29,7 @@ class Configuration implements ConfigurationInterface
             ->booleanNode('rabbit_enabled')->defaultFalse()->end()
             ->scalarNode('cache_pool')->defaultValue('cache.app')->end()
             ->scalarNode('messenger_transport')->defaultValue('async')->end()
+            ->scalarNode('ip_filter_flags')->defaultValue('8224')->end()
             ->scalarNode('redirect_route')->defaultValue('app_blocked')->end()
             ->booleanNode('use_custom_blocked_page')->defaultFalse()->end()
             ->booleanNode('simulate')->defaultFalse()->end()

@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace GeolocatorBundle\Service;
 
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
+
 use DateTimeImmutable;
 use DateInterval;
 use DateTimeZone;

@@ -28,6 +28,7 @@ class GeolocatorExtension extends Extension
         $container->setParameter('geolocator.ban_duration', $config['ban_duration']);
         $container->setParameter('geolocator.ping_threshold', $config['ping_threshold']);
         $container->setParameter('geolocator.messenger_transport', $config['messenger_transport']);
+        $container->setParameter('geolocator.ip_filter_flags', $config['ip_filter_flags']);
 
         // Si RabbitMQ est activé, configurer les tags de service appropriés
         if ($config['rabbit_enabled']) {
