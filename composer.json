@@ -2,6 +2,9 @@
   "name": "xorgxx/geolocator-bundle",
   "description": "Bundle de filtrage d'accés basé sur la géolocalisation IP",
   "type": "symfony-bundle",
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "license": "MIT",
   "require": {
     "php": ">=8.2",
     "symfony/framework-bundle": "^7.3",

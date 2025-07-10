@@ -59,6 +59,15 @@ final class GeolocateMessageHandler
 
             $geoData = $provider->locate($ip);
 
+            // Publication Mercure
+            $topic   = "https://api.monsite.com/geoloc/{$ip}";
+            $update  = new Update(
+                $topic,
+                json_encode($geoData),
+                false // `true` si message privé (auth required), `false` pour public
+            );
+            $this->mercureHub->publish($update);
+
             $this->cache->set($ip, $geoData);
 
             $this->logger->info('Geolocation successful', [
