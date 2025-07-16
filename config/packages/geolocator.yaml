@@ -1,7 +1,5 @@
 geolocator :
   enabled              : true               # Active ou désactive tout le bundle
-  
-  
   event_bridge_service : null  # Service externe pour déléguer les événements
   
   providers            :
@@ -48,7 +46,7 @@ geolocator :
   profiler             :
     enabled : true           # Affiche la barre dans la debug bar Symfony
   
-  simulate             :
-    log_only : true          # Si true : ne bloque jamais, log seulement
+  simulate             : false
+#    log_only : true          # Si true : ne bloque jamais, log seulement
   
   # Ajoute ici tout paramètre custom nécessaire à tes extensions/filtres/bridges
