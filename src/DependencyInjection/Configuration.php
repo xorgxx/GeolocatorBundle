@@ -90,12 +90,6 @@ class Configuration implements ConfigurationInterface
             ->booleanNode('enabled')->defaultTrue()->end()
             ->end()
             ->end()
-            ->arrayNode('simulate')
-            ->addDefaultsIfNotSet()
-            ->children()
-            ->booleanNode('log_only')->defaultTrue()->end()
-            ->end()
-            ->end()
             ->end()
         ;
 

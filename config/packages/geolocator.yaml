@@ -46,7 +46,6 @@ geolocator :
   profiler             :
     enabled : true           # Affiche la barre dans la debug bar Symfony
   
-  simulate             : false
-#    log_only : true          # Si true : ne bloque jamais, log seulement
+  simulate             : false          # Si true : ne bloque jamais, log seulement
   
   # Ajoute ici tout paramètre custom nécessaire à tes extensions/filtres/bridges
