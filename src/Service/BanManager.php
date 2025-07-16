@@ -1,169 +1,265 @@
 <?php
-declare(strict_types=1);
-
 namespace GeolocatorBundle\Service;
 
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
+use GeolocatorBundle\Bridge\GeolocatorEventBridgeInterface;
 
-use DateTimeImmutable;
-use DateInterval;
-use DateTimeZone;
-use InvalidArgumentException;
-
-/**
- * Management of IP banns in session with automatic expiration.
- */
-final class BanManager
+class BanManager
 {
-    private SessionInterface $session;
-    private const BANS_SESSION_KEY = 'geolocator_bans';
-    private const DEFAULT_DURATION_SECONDS = 3600;
+    private array $bans = [];
+    private int $maxAttempts;
+    private int $ttl;
+    private array $permanentCountries;
+    private string $storageType;
+    private ?string $storageFile;
+    private ?string $redisDsn;
+    private ?LoggerInterface $logger;
+    private bool $simulate;
+    private ?GeolocatorEventBridgeInterface $eventBridge;
 
-    /**
-     * @param SessionInterface $session Storage of banns in HTTP session.
-     */
-    public function __construct(SessionInterface $session)
-    {
-        $this->session = $session;
+    public function __construct(
+        array $config,
+        LoggerInterface $logger = null,
+        ?GeolocatorEventBridgeInterface $eventBridge = null
+    ) {
+        $this->maxAttempts = $config['bans']['max_attempts'] ?? 10;
+        $this->ttl = $config['bans']['ttl'] ?? 3600;
+        $this->permanentCountries = $config['bans']['permanent_countries'] ?? [];
+        $this->storageType = $config['storage']['type'] ?? 'json';
+        $this->storageFile = $config['storage']['file'] ?? null;
+        $this->redisDsn = $config['storage']['redis_dsn'] ?? null;
+        $this->logger = $logger;
+        $this->simulate = $config['simulate'] ?? false;
+        $this->eventBridge = $eventBridge;
+        $this->loadBans();
     }
 
-    /**
-     * Adds a ban for a given IP address.
-     *
-     * @param string $ip IP address to ban.
-     * @param string $reason Ban reason.
-     * @param string $duration Ban duration (ex. "1 hour", "30 minutes", "P1DT2H").
-     *
-     * @throws InvalidArgumentException If IP or duration is invalid.
-     */
-    public function addBan(string $ip, string $reason, string $duration): void
+    public function isBanned(string $ip, ?SessionInterface $session = null, ?array $geo = null): bool
     {
-        if (!filter_var($ip, FILTER_VALIDATE_IP)) {
-            throw new InvalidArgumentException(sprintf('Invalid IP address: %s', $ip));
+        if ($session !== null && $session->has('geolocator_banned')) {
+            return true;
+        }
+        if (isset($this->bans[$ip]) && ($this->bans[$ip]['until'] === null || $this->bans[$ip]['until'] > time())) {
+            return true;
+        }
+        if ($geo && !empty($this->permanentCountries) && in_array($geo['country'] ?? '', $this->permanentCountries, true)) {
+            return true;
+        }
+        return false;
+    }
+
+    public function banIp(string $ip, ?string $reason = null, ?array $geo = null, ?SessionInterface $session = null): void
+    {
+        if ($this->simulate) {
+            $this->log("[SIMULATE] Would ban IP $ip " . ($reason ? "($reason)" : ''));
+            return;
         }
 
-        $durationSeconds = $this->parseDurationToSeconds($duration);
-        $expiresAt = (new DateTimeImmutable('now', new DateTimeZone('UTC')))
-            ->add(new DateInterval(sprintf('PT%dS', $durationSeconds)));
-
-        $bans = $this->getBans();
-        $bans[$ip] = [
-            'reason'     => $reason,
-            'expires_at' => $expiresAt->format(DateTimeImmutable::ATOM),
+        $until = $this->ttl > 0 ? (time() + $this->ttl) : null;
+        $this->bans[$ip] = [
+            'until' => $until,
+            'reason' => $reason,
+            'geo' => $geo,
+            'at' => time(),
         ];
-        $this->saveBans($bans);
+
+        $this->saveBans();
+
+        if ($session !== null) {
+            $session->set('geolocator_banned', true);
+        }
+
+        $payload = [
+            'ip' => $ip,
+            'reason' => $reason,
+            'geo' => $geo,
+            'timestamp' => time(),
+        ];
+
+        if ($this->eventBridge instanceof GeolocatorEventBridgeInterface) {
+            $this->eventBridge->notify($payload, 'ban');
+        }
+
+        $this->log("Ban IP $ip" . ($reason ? " ($reason)" : ''));
     }
 
-    /**
-     * Check if an IP is banned.
-     *
-     * @Param String $ip IP address to check.
-     * @RETURN BOOL TRUE If the ban is active, false otherwise.
-     * @throws \Exception
-     */
-    public function isBanned(string $ip): bool
+    public function unbanIp(string $ip): void
     {
-        $bans = $this->getBans();
-
-        if (!isset($bans[$ip])) {
-            return false;
-        }
-
-        $expiresAt = new DateTimeImmutable($bans[$ip]['expires_at'], new DateTimeZone('UTC'));
-        $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
-
-        if ($expiresAt < $now) {
-            unset($bans[$ip]);
-            $this->saveBans($bans);
-            return false;
-        }
-
-        return true;
+        unset($this->bans[$ip]);
+        $this->saveBans();
+        $this->log("Unban IP $ip");
     }
 
+    public function getBans(): array
+    {
+        return $this->bans;
+    }
+    
     /**
-     * List all banns.
-     * @return array<string, array{reason: string, expires_at: string}>
+     * Alias for getBans() to maintain compatibility with tests
      */
     public function listBans(): array
     {
         return $this->getBans();
     }
-
+    
     /**
-     * Remove the ban from an IP.
-     *
-     * @Param String $IP IP address to Dépanner.
+     * Alias for banIp() to maintain compatibility with GeoFilterSubscriber
+     */
+    public function addBan(string $ip, ?string $reason = null, ?string $duration = null): void
+    {
+        // Convert duration string to TTL if provided
+        $originalTtl = $this->ttl;
+        if ($duration !== null) {
+            $this->ttl = $this->parseDuration($duration);
+        }
+        
+        $this->banIp($ip, $reason);
+        
+        // Restore original TTL
+        if ($duration !== null) {
+            $this->ttl = $originalTtl;
+        }
+    }
+    
+    /**
+     * Alias for unbanIp() to maintain compatibility with tests
      */
     public function removeBan(string $ip): void
     {
-        $bans = $this->getBans();
-        if (isset($bans[$ip])) {
-            unset($bans[$ip]);
-            $this->saveBans($bans);
-        }
+        $this->unbanIp($ip);
     }
-
+    
     /**
-     * Converts a duration string to seconds.
-     *
-     * Supports:
-     *  - "10 seconds", "5 minutes", "2 hours", "1 day"
-     *  - ISO 8601 durations (ex. "P1DT2H30M")
-     *
-     * @param string $duration
-     * @return int
-     * @throws InvalidArgumentException If format is invalid.
+     * Parse duration string like "1 hour", "30 minutes" to seconds
      */
-    private function parseDurationToSeconds(string $duration): int
+    private function parseDuration(string $duration): int
     {
-        $duration = trim($duration);
-        $patterns = [
-            '/^(?P<value>\d+)\s*second(?:s)?$/i' => 1,
-            '/^(?P<value>\d+)\s*minute(?:s)?$/i' => 60,
-            '/^(?P<value>\d+)\s*hour(?:s)?$/i'   => 3600,
-            '/^(?P<value>\d+)\s*day(?:s)?$/i'    => 86400,
-        ];
-
-        foreach ($patterns as $pattern => $multiplier) {
-            if (preg_match($pattern, $duration, $matches)) {
-                return (int)$matches['value'] * $multiplier;
-            }
+        $parts = explode(' ', trim(strtolower($duration)));
+        if (count($parts) !== 2) {
+            throw new \InvalidArgumentException("Invalid duration format: $duration");
         }
-
-        // ISO 8601 (P[n]DT[n]H[n]M[n]S)
-        if (preg_match(
-            '/^P(?:(?P<days>\d+)D)?T?(?:(?P<hours>\d+)H)?(?:(?P<minutes>\d+)M)?(?:(?P<seconds>\d+)S)?$/',
-            $duration,
-            $matches
-        )) {
-            $seconds = 0;
-            if (!empty($matches['days'])) {
-                $seconds += (int)$matches['days'] * 86400;
-            }
-            if (!empty($matches['hours'])) {
-                $seconds += (int)$matches['hours'] * 3600;
-            }
-            if (!empty($matches['minutes'])) {
-                $seconds += (int)$matches['minutes'] * 60;
-            }
-            if (!empty($matches['seconds'])) {
-                $seconds += (int)$matches['seconds'];
-            }
-            return $seconds > 0 ? $seconds : self::DEFAULT_DURATION_SECONDS;
-        }
-
-        throw new InvalidArgumentException(sprintf('Invalid duration format: "%s".', $duration));
+        
+        $value = (int)$parts[0];
+        $unit = rtrim($parts[1], 's'); // Remove trailing 's' if present
+        
+        return match($unit) {
+            'second' => $value,
+            'minute' => $value * 60,
+            'hour' => $value * 3600,
+            'day' => $value * 86400,
+            'week' => $value * 604800,
+            'month' => $value * 2592000,
+            default => throw new \InvalidArgumentException("Unknown time unit: $unit")
+        };
     }
 
-    private function getBans(): array
+    public function checkAttempts(string $ip, int $attempts): void
     {
-        return $this->session->get(self::BANS_SESSION_KEY, []);
+        if ($attempts >= $this->maxAttempts) {
+            $this->banIp($ip, 'Too many attempts');
+        }
     }
 
-    private function saveBans(array $bans): void
+    private function log(string $msg): void
     {
-        $this->session->set(self::BANS_SESSION_KEY, $bans);
+        if ($this->logger) {
+            $this->logger->warning($msg);
+        }
+    }
+
+    private function loadBans(): void
+    {
+        if ($this->storageType === 'json' && $this->storageFile && file_exists($this->storageFile)) {
+            $json = file_get_contents($this->storageFile);
+            $this->bans = json_decode($json, true) ?: [];
+        } elseif ($this->storageType === 'memory') {
+            $this->bans = [];
+        } elseif ($this->storageType === 'redis' && $this->redisDsn) {
+            $this->loadBansFromRedis();
+        }
+    }
+
+    private function saveBans(): void
+    {
+        if ($this->storageType === 'json' && $this->storageFile) {
+            file_put_contents($this->storageFile, json_encode($this->bans));
+        } elseif ($this->storageType === 'redis' && $this->redisDsn) {
+            $this->saveBansToRedis();
+        }
+    }
+    
+    private function loadBansFromRedis(): void
+    {
+        try {
+            $redis = new \Redis();
+            if ($redis->connect(parse_url($this->redisDsn, PHP_URL_HOST), parse_url($this->redisDsn, PHP_URL_PORT))) {
+                $path = parse_url($this->redisDsn, PHP_URL_PATH);
+                if ($path && strlen($path) > 1) {
+                    $redis->select(intval(substr($path, 1)));
+                }
+                
+                $keys = $redis->keys('geolocator_ban:*');
+                $this->bans = [];
+                
+                foreach ($keys as $key) {
+                    $ip = str_replace('geolocator_ban:', '', $key);
+                    $banData = json_decode($redis->get($key), true);
+                    if ($banData) {
+                        $this->bans[$ip] = $banData;
+                    }
+                }
+                
+                $redis->close();
+                $this->log("Loaded " . count($this->bans) . " bans from Redis");
+            }
+        } catch (\Exception $e) {
+            $this->log("Error loading bans from Redis: " . $e->getMessage());
+        }
+    }
+    
+    private function saveBansToRedis(): void
+    {
+        try {
+            $redis = new \Redis();
+            if ($redis->connect(parse_url($this->redisDsn, PHP_URL_HOST), parse_url($this->redisDsn, PHP_URL_PORT))) {
+                $path = parse_url($this->redisDsn, PHP_URL_PATH);
+                if ($path && strlen($path) > 1) {
+                    $redis->select(intval(substr($path, 1)));
+                }
+                
+                // Clear existing bans
+                $keys = $redis->keys('geolocator_ban:*');
+                if (!empty($keys)) {
+                    $redis->del($keys);
+                }
+                
+                // Save current bans
+                foreach ($this->bans as $ip => $banData) {
+                    $key = 'geolocator_ban:' . $ip;
+                    $ttl = null;
+                    
+                    if (isset($banData['until']) && $banData['until'] !== null) {
+                        $ttl = $banData['until'] - time();
+                        if ($ttl <= 0) {
+                            // Skip expired bans
+                            continue;
+                        }
+                    }
+                    
+                    $redis->set($key, json_encode($banData));
+                    
+                    if ($ttl !== null) {
+                        $redis->expire($key, $ttl);
+                    }
+                }
+                
+                $redis->close();
+                $this->log("Saved " . count($this->bans) . " bans to Redis");
+            }
+        } catch (\Exception $e) {
+            $this->log("Error saving bans to Redis: " . $e->getMessage());
+        }
     }
 }

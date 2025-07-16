@@ -3,7 +3,7 @@
 Ce guide liste les étapes restantes pour rendre le bundle 100% fonctionnel.
 
 1. **Implémentation des filtres**  
-   - Complétez `GeoFilterListener` :  
+   - Complétez `GeoFilterSubscriber` :  
      - VPN (data['proxy'])  
      - Crawler/User-Agent (`blocked_crawlers`)  
      - Flood/ping (RateLimiter)

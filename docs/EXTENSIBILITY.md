@@ -1,6 +1,6 @@
 # Extensibilité
 
-Le bundle permet d'ajouter vos propres filtres à l’aide de l’interface `FilterInterface`.
+Le bundle permet d'ajouter vos propres filtres à l'aide de l'interface `FilterInterface`.
 
 ```php
 namespace App\Security\Filter;
@@ -30,4 +30,4 @@ services:
             - { name: 'xorg.geofilter.filter' }
 ```
 
-Le listener `GeoFilterListener` exécute automatiquement tous les services taggés et applique le ban dès qu’un filtre renvoie `true`.
+Le subscriber `GeoFilterSubscriber` exécute automatiquement tous les services taggés et applique le ban dès qu'un filtre renvoie `true`.

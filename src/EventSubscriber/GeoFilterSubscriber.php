@@ -81,8 +81,8 @@ final class GeoFilterSubscriber implements EventSubscriberInterface
         }
 
         // 4) Country blocking (could be handled as a filter if needed)
-        $blockedCountries = $this->config[ 'blocked_countries' ] ?? [];
-        $country = $geoData[ 'country' ] ?? null;
+        $blockedCountries = $this->config['country_filters']['block'] ?? [];
+        $country = $geoData['country'] ?? null;
         if (null !== $country && \in_array($country, $blockedCountries, true)) {
             $this->banAndRespond($event, $ip, 'Country blocked: ' . $country, $country);
         }

@@ -6,8 +6,21 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use InvalidArgumentException;
 
 beforeEach(function () {
-    $this->session    = new Session(new MockArraySessionStorage());
-    $this->banManager = new BanManager($this->session);
+    $this->session = new Session(new MockArraySessionStorage());
+    $config = [
+        'storage' => [
+            'type' => 'memory',
+            'file' => null,
+            'redis_dsn' => null
+        ],
+        'bans' => [
+            'max_attempts' => 10,
+            'ttl' => 3600,
+            'permanent_countries' => []
+        ],
+        'simulate' => false
+    ];
+    $this->banManager = new BanManager($config, null, null);
 });
 
 it('starts with no bans', function () {

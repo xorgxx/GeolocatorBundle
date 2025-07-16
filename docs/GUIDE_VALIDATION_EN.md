@@ -3,7 +3,7 @@
 This guide lists remaining steps to make the bundle 100% functional.
 
 1. **Filter Implementation**  
-   - Complete `GeoFilterListener`:  
+   - Complete `GeoFilterSubscriber`:  
      - VPN detection (`data['proxy']`)  
      - Crawler/User-Agent (`blocked_crawlers`)  
      - Flood/ping (RateLimiter)

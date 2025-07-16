@@ -1,5 +1,4 @@
 <?php
-
 namespace GeolocatorBundle\DependencyInjection;
 
 use Symfony\Component\Config\FileLocator;
@@ -9,84 +8,46 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 class GeolocatorExtension extends Extension
 {
-    public function load(array $configs, ContainerBuilder $container): void
+    public function load(array $configs, ContainerBuilder $container)
     {
+        $loader = new YamlFileLoader(
+            $container,
+            new FileLocator(__DIR__ . '/../Resources/config')
+        );
+        if (file_exists(__DIR__ . '/../Resources/config/services.yaml')) {
+            $loader->load('services.yaml');
+        }
+
+        // Chargement de la config du bundle
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
-//        $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
-//        $loader->load('services.yaml');
+        // Set all configuration parameters
+        $container->setParameter('geolocator', $config);
+        $container->setParameter('geolocator.simulate', $config['simulate'] ?? false);
+        $container->setParameter('geolocator.event_bridge_service', $config['event_bridge_service'] ?? null);
+        $container->setParameter('geolocator.providers', $config['providers'] ?? []);
+        $container->setParameter('geolocator.storage', $config['storage'] ?? []);
+        $container->setParameter('geolocator.bans', $config['bans'] ?? []);
+        $container->setParameter('geolocator.country_filters', $config['country_filters'] ?? []);
+        $container->setParameter('geolocator.vpn_detection', $config['vpn_detection'] ?? []);
+        $container->setParameter('geolocator.crawler_filter', $config['crawler_filter'] ?? []);
+        $container->setParameter('geolocator.redirect_on_ban', $config['redirect_on_ban'] ?? '/banned');
+        $container->setParameter('geolocator.log_channel', $config['log_channel'] ?? 'geolocator');
+        $container->setParameter('geolocator.log_level', $config['log_level'] ?? 'warning');
+        $container->setParameter('geolocator.profiler', $config['profiler'] ?? ['enabled' => true]);
+        
+        // Default parameters that might be referenced in services.yaml
+        $container->setParameter('geolocator.ip_filter_flags', FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6);
+        $container->setParameter('geolocator.cache_ttl', 3600);
+        $container->setParameter('geolocator.bot_patterns', []);
+        $container->setParameter('geolocator.bot_challenge_enabled', false);
+        $container->setParameter('geolocator.webhooks', []);
+        $container->setParameter('geolocator.messenger_transport', null);
+    }
 
-        // Ajoute cette condition pour stopper le chargement
-        if (isset($config['enabled']) && $config['enabled'] === false) {
-            return; // Interrompt immédiatement le chargement du bundle
-        }
-
-        $container->setParameter('geolocator.enabled', $config['enabled']);
-        $container->setParameter('geolocator.redis_enabled', $config['redis_enabled']);
-        $container->setParameter('geolocator.rabbit_enabled', $config['rabbit_enabled']);
-        $container->setParameter('geolocator.cache_pool', $config['cache_pool']);
-        $container->setParameter('geolocator.cache_ttl', $config['cache_ttl']);
-        $container->setParameter('geolocator.redirect_route', $config['redirect_route']);
-        $container->setParameter('geolocator.use_custom_blocked_page', $config['use_custom_blocked_page']);
-        $container->setParameter('geolocator.simulate', $config['simulate']);
-        $container->setParameter('geolocator.ban_duration', $config['ban_duration']);
-        $container->setParameter('geolocator.ping_threshold', $config['ping_threshold']);
-        $container->setParameter('geolocator.messenger_transport', $config['messenger_transport']);
-        $container->setParameter('geolocator.ip_filter_flags', $config['ip_filter_flags']);
-
-        // Filtrage IP
-        $container->setParameter('geolocator.blocked_crawlers', $config['blocked_crawlers']);
-        $container->setParameter('geolocator.blocked_ips', $config['blocked_ips']);
-        $container->setParameter('geolocator.blocked_ranges', $config['blocked_ranges']);
-        $container->setParameter('geolocator.allowed_ranges', $config['allowed_ranges']);
-
-        // Géolocalisation
-        $container->setParameter('geolocator.blocked_countries', $config['blocked_countries']);
-        $container->setParameter('geolocator.allowed_countries', $config['allowed_countries']);
-        $container->setParameter('geolocator.blocked_continents', $config['blocked_continents']);
-        $container->setParameter('geolocator.allowed_continents', $config['allowed_continents']);
-
-        // ASN & FAI
-        $container->setParameter('geolocator.blocked_asns', $config['blocked_asns']);
-        $container->setParameter('geolocator.allowed_asns', $config['allowed_asns']);
-        $container->setParameter('geolocator.blocked_isps', $config['blocked_isps']);
-        $container->setParameter('geolocator.allowed_isps', $config['allowed_isps']);
-
-        // Webhooks
-        $container->setParameter('geolocator.webhooks', $config['webhooks'] ?? []);
-
-        $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
-        $loader->load('services.yaml');
-
-        // Si RabbitMQ est activé, configurer les tags de service appropriés
-        if ($config['rabbit_enabled']) {
-            // Les tags et configurations spécifiques pourraient être ajoutés ici
-        }
+    public function getAlias(): string
+    {
+        return 'geolocator';
     }
 }
-//namespace GeolocatorBundle\DependencyInjection;
-//
-//use Exception;
-//use Symfony\Component\DependencyInjection\ContainerBuilder;
-//use Symfony\Component\DependencyInjection\Extension\Extension;
-//use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
-//use Symfony\Component\Config\FileLocator;
-//
-//
-//class GeolocatorExtension extends Extension
-//{
-//    /**
-//     * @throws Exception
-//     */
-//    public function load(array $configs, ContainerBuilder $container): void
-//    {
-//        $configuration = new Configuration();
-//        $config = $this->processConfiguration($configuration, $configs);
-//
-//        $container->setParameter('geolocator.config', $config);
-//
-//        $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
-//        $loader->load('services.yaml');
-//    }
-//}

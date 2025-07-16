@@ -1,6 +1,6 @@
 # Extensibility
 
-Le bundle permet d'ajouter vos propres filtres à l’aide de l’interface `FilterInterface`.
+The bundle allows you to add your own filters using the `FilterInterface`.
 
 ```php
 namespace App\Security\Filter;
@@ -20,7 +20,7 @@ class TimeWindowFilter implements FilterInterface
 }
 ```
 
-Ensuite, déclarez le service dans `services.yaml` :
+Then, declare the service in `services.yaml`:
 
 ```yaml
 services:
@@ -30,4 +30,4 @@ services:
             - { name: 'xorg.geofilter.filter' }
 ```
 
-Le listener `GeoFilterListener` exécute automatiquement tous les services taggés et applique le ban dès qu’un filtre renvoie `true`.
+The `GeoFilterSubscriber` automatically executes all tagged services and applies the ban as soon as a filter returns `true`.

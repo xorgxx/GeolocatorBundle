@@ -35,6 +35,14 @@ services:
     GeolocatorBundle\Filter\:
         resource: '../../Filter'
         tags: ['neox.geofilter.filter']
+        
+    # Configuration spécifique pour le filtre VPN
+    GeolocatorBundle\Filter\VpnFilter:
+        arguments:
+            $enabled: '%geolocator.vpn_detection.enabled%'
+            $allowedIps: '%geolocator.vpn_detection.allowed_ips%'
+            $logger: '@logger'
+        tags: ['neox.geofilter.filter']
 
     # --- Déclarations explicites pour services spécifiques ---
     GeolocatorBundle\Service\WebhookNotifier:
@@ -85,7 +93,9 @@ services:
 
     GeolocatorBundle\Service\BanManager:
         arguments:
-            - '@session'
+            $config: '%geolocator%'
+            $logger: '@logger'
+            $eventBridge: '@?GeolocatorBundle\Bridge\GeolocatorEventBridgeInterface'
 
     GeolocatorBundle\Service\ProviderManager:
         arguments:

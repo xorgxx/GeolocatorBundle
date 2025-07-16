@@ -1,6 +1,6 @@
 # GeolocatorBundle
 
-Ce repository contient deux versions du guide d’utilisation du bundle :
+Ce repository contient deux versions du guide d'utilisation du bundle :
 
 * 📘 [README français](README.fr.md)
 * 📗 [README English](README.en.md)
@@ -10,28 +10,28 @@ Le fichier ci-dessus est un index léger pour naviguer vers le guide complet dan
 
 ## Démarrage rapide / Getting Started
 
-Pour aider le développeur à installer et configurer le bundle :
+Pour aider le développeur à installer et configurer le bundle :
 
 1. **Installation**
 
-    * Composer : `composer require geolocator-bundle`
-    * Flex : vérifiez que `GeolocatorBundle\GeolocatorBundle` apparaît bien dans `config/bundles.php`
+    * Composer : `composer require geolocator-bundle`
+    * Flex : vérifiez que `GeolocatorBundle\GeolocatorBundle` apparaît bien dans `config/bundles.php`
 
 2. **Paramétrage**
 
     * Copiez `config/packages/geolocator.yaml` et ajustez les options :
 
-        * `enabled` : activer/désactiver
+        * `enabled` : activer/désactiver
         * `redis_enabled` / `rabbit_enabled`
-        * DSN providers : `GEOLOCATOR_PROVIDERS_DSN`
+        * DSN providers : `GEOLOCATOR_PROVIDERS_DSN`
         * `TRUSTED_PROXIES`, `MESSENGER_TRANSPORT_DSN`, etc.
-    * Définissez les variables d’environnement dans `.env.local` ou serveur.
+    * Définissez les variables d'environnement dans `.env.local` ou serveur.
 
 3. **Validation**
 
     * Exécutez `composer dump-autoload`
     * Lancez `vendor/bin/pest` et vos WebTestCase
-    * Démarrez le serveur : `bin/console server:run`
+    * Démarrez le serveur : `bin/console server:run`
     * Testez la route `/__geo/debug` et le dashboard admin
 
 ---
@@ -59,25 +59,25 @@ For more details, consult the documentation:
 
 ## Checklist de validation
 
-Le squelette du bundle est bien en place, mais pour qu’il soit « fonctionnel » à 100 % il reste quelques étapes, détaillées dans [docs/GUIDE\_VALIDATION.md](docs/GUIDE_VALIDATION.md) :
+Le squelette du bundle est bien en place, mais pour qu'il soit « fonctionnel » à 100 % il reste quelques étapes, détaillées dans [docs/GUIDE\_VALIDATION.md](docs/GUIDE_VALIDATION.md) :
 
 1. **Implémentation des filtres**
 
-    * `GeoFilterListener` contient aujourd’hui des `// TODO` pour la logique VPN, User-Agent, flood, etc.
+    * `GeoFilterSubscriber` contient la logique de filtrage géographique et peut être étendu pour la détection VPN, User-Agent, flood, etc.
     * Traduction des règles métier en appels `IpUtils::checkIp`, comparaisons de pays/ASN/ISP et déclenchement du ban ou bypass.
 
 2. **Configuration réelle**
 
     * Vérifiez que `config/packages/geolocator.yaml` est bien chargé (alias `geolConfig.yaml`) : activez `rabbit_enabled` ou `redis_enabled` selon votre usage ; en environnement de test, désactivez-les pour rester en mode synchrone/filesystem.
-    * Assurez-vous que les variables d’environnement (`GEOLOCATOR_PROVIDERS_DSN`, `TRUSTED_PROXIES`, `MESSENGER_TRANSPORT_DSN`, etc.) sont définies.
+    * Assurez-vous que les variables d'environnement (`GEOLOCATOR_PROVIDERS_DSN`, `TRUSTED_PROXIES`, `MESSENGER_TRANSPORT_DSN`, etc.) sont définies.
 
 3. **Composer & autoload**
 
     * Exécutez `composer dump-autoload` pour prendre en compte les namespaces.
-    * Vérifiez que `extra.symfony.bundle` de `composer.json` pointe vers `GeolocatorBundle\GeolocatorBundle` et qu’il apparaît dans `bundles.php`.
+    * Vérifiez que `extra.symfony.bundle` de `composer.json` pointe vers `GeolocatorBundle\GeolocatorBundle` et qu'il apparaît dans `bundles.php`.
 
 4. **Tests de base**
-   Lancez :
+   Lancez :
 
     * `vendor/bin/pest` pour les tests unitaires.
     * Vos WebTestCase pour valider :
@@ -90,5 +90,4 @@ Le squelette du bundle est bien en place, mais pour qu’il soit « fonctionnel 
 5. **Exécution manuelle**
 
     * `bin/console server:run` et test des routes (`/__geo/debug`, `/`, `/admin/geolocator`).
-    * Testez avec l’en-tête `X-Forwarded-For` pour valider `IpResolver`.
-
+    * Testez avec l'en-tête `X-Forwarded-For` pour valider `IpResolver`.

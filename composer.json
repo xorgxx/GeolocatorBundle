@@ -7,19 +7,24 @@
   "license": "MIT",
   "require": {
     "php": ">=8.2",
-    "symfony/framework-bundle": "^7.3",
-    "symfony/http-foundation" : "^7.3",
-    "geoip2/geoip2": "^2.0",
-    "symfony/http-client": "^7.3",
-    "symfony/messenger": "^7.3",
-    "ramsey/uuid": "^4.9"
+    "symfony/http-kernel": "^6.0|^7.0",
+    "symfony/dependency-injection": "^6.0|^7.0",
+    "symfony/config": "^6.0|^7.0",
+    "psr/log": "^1.0|^2.0|^3.0"
   },
   "autoload": {
     "psr-4": {
       "GeolocatorBundle\\": "src/"
     }
   },
+  "suggest": {
+    "symfony/mercure-bundle": "Live ban notifications via Mercure",
+    "symfony/messenger": "Live ban notifications via RabbitMq"
+  },
   "extra": {
+    "branch-alias": {
+      "dev-main": "1.0-dev"
+    },
     "symfony": {
       "bundle": {
         "GeolocatorBundle\\GeolocatorBundle": "all"
