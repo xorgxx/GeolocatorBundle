@@ -26,6 +26,8 @@ class GeolocatorExtension extends Extension
         $container->setParameter('geolocator', $config);
         $container->setParameter('geolocator.simulate', $config['simulate'] ?? false);
         $container->setParameter('geolocator.event_bridge_service', $config['event_bridge_service'] ?? null);
+        $container->setParameter('geolocator.ip_filter_flags', $config['ip_filter_flags'] ?? []);
+
         $container->setParameter('geolocator.providers', $config['providers'] ?? []);
         $container->setParameter('geolocator.storage', $config['storage'] ?? []);
         $container->setParameter('geolocator.bans', $config['bans'] ?? []);
@@ -36,7 +38,7 @@ class GeolocatorExtension extends Extension
         $container->setParameter('geolocator.log_channel', $config['log_channel'] ?? 'geolocator');
         $container->setParameter('geolocator.log_level', $config['log_level'] ?? 'warning');
         $container->setParameter('geolocator.profiler', $config['profiler'] ?? ['enabled' => true]);
-        
+
         // Default parameters that might be referenced in services.yaml
         $container->setParameter('geolocator.ip_filter_flags', FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6);
         $container->setParameter('geolocator.cache_ttl', 3600);

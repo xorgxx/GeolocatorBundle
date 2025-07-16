@@ -20,15 +20,15 @@ class IpWhoisProvider implements GeolocationProviderInterface
         return 'ipwhois';
     }
 
+    public function isAvailable(): bool
+    {
+        return true;
+    }
+
     public function locate(string $ip): array
     {
         $url = str_replace('{ip}', $ip, $this->dsn);
         $response = $this->client->request('GET', $url);
         return $response->toArray();
-    }
-
-    public function isAvailable(): bool
-    {
-        return true;
     }
 }

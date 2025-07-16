@@ -1,7 +1,11 @@
 geolocator :
   enabled              : true               # Active ou désactive tout le bundle
   event_bridge_service : null  # Service externe pour déléguer les événements
-  
+
+  ip_filter_flags :
+      - 'X-Forwarded-For'
+      - 'Client-Ip'
+
   providers            :
     default  : 'ipapi'        # Le provider principal utilisé
     list     :
@@ -13,39 +17,39 @@ geolocator :
         dsn    : 'https://ipqualityscore.com/api/json/ip/{apikey}/{ip}'
         apikey : '%env(IPQUALITYSCORE_APIKEY)%'
     fallback : [ 'ipwhois', 'ipapi' ]
-  
+
   storage              :
     type      : 'json'            # 'memory', 'json', 'redis'
     file      : '%kernel.project_dir%/var/bans.json'
     redis_dsn : 'redis://localhost'
-  
+
   bans                 :
     max_attempts        : 10        # Nombre de tentatives avant ban temporaire
     ttl                 : 3600      # Temps (en secondes) du ban temporaire
     ban_duration        : '1 hour'  # Durée du ban (format: '1 hour', '30 minutes', '1 day')
     permanent_countries : [ 'RU', 'CN' ] # Ban définitif pour ces pays
-  
+
   country_filters      :
     allow : [ 'FR', 'BE' ]     # Autoriser seulement ces pays
     block : [ 'RU', 'CN' ]     # Bloquer ces pays
-  
+
   vpn_detection        :
     enabled     : true
     provider    : 'ipqualityscore'
     allowed_ips : []            # IPs autorisées même si détectées comme VPN
-  
+
   crawler_filter       :
     enabled     : true
     allow_known : false      # Laisser passer Googlebot/Bingbot ?
-  
+
   redirect_on_ban      : '/banned'  # URL de redirection si banni
-  
+
   log_channel          : 'geolocator'   # Canal de log
   log_level            : 'warning'        # Niveau minimal loggé
-  
+
   profiler             :
     enabled : true           # Affiche la barre dans la debug bar Symfony
-  
+
   simulate             : false          # Si true : ne bloque jamais, log seulement
-  
+
   # Ajoute ici tout paramètre custom nécessaire à tes extensions/filtres/bridges

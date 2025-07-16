@@ -1,9 +1,6 @@
 parameters:
-#    geolocator.webhooks: '%env(GEOLOCATOR_WEBHOOKS)%'
-#    geolocator.cache_ttl: '%env(int:GEOLOCATOR_CACHE_TTL)%'
-#    geolocator.trusted_proxies: '%env(TRUSTED_PROXIES)%'
-#    geolocator.bot_patterns: '%env(json:BOT_PATTERNS)%'
-#    geolocator.bot_challenge_enabled: '%env(bool:BOT_CHALLENGE)%'
+    # Injection brute de toute la config geolocator
+    geolocator.config: '%geolocator%'
 
 services:
     _defaults:
@@ -15,8 +12,8 @@ services:
     GeolocatorBundle\Service\:
         resource: '../../Service'
 
-    GeolocatorBundle\Provider\:
-        resource: '../../Provider'
+#    GeolocatorBundle\Provider\:
+#        resource: '../../Provider'
 
     GeolocatorBundle\Export\:
         resource: '../../Export'
@@ -35,7 +32,19 @@ services:
     GeolocatorBundle\Filter\:
         resource: '../../Filter'
         tags: ['neox.geofilter.filter']
-        
+
+    # Enregistrement automatique des providers
+    GeolocatorBundle\Provider\:
+        resource: '../../Provider'
+        tags: ['geolocator.provider']
+
+    # Manager des providers
+    GeolocatorBundle\Service\ProviderManager:
+        arguments:
+            $config: '%geolocator.config%'
+            $taggedProviders: !tagged_iterator geolocator.provider
+            $logger: '@logger'
+
     # Configuration spécifique pour le filtre VPN
     GeolocatorBundle\Filter\VpnFilter:
         arguments:
@@ -75,7 +84,7 @@ services:
             $params: '@parameter_bag'
 
     GeolocatorBundle\Service\IpResolver:
-        arguments:
+        bind:
             $filterFlags: '%geolocator.ip_filter_flags%'
 
     GeolocatorBundle\Service\GeolocationCache:
@@ -97,9 +106,9 @@ services:
             $logger: '@logger'
             $eventBridge: '@?GeolocatorBundle\Bridge\GeolocatorEventBridgeInterface'
 
-    GeolocatorBundle\Service\ProviderManager:
-        arguments:
-            $providers: !tagged_iterator geolocator.provider
+#    GeolocatorBundle\Service\ProviderManager:
+#        arguments:
+#            $providers: !tagged_iterator geolocator.provider
 
     # Configuration explicite pour FilterResult
     GeolocatorBundle\Filter\FilterResult:
