@@ -16,7 +16,7 @@ class AsyncManager
     private bool $mercureEnabled;
     private ?MessageBusInterface $messageBus;
     private LoggerInterface $logger;
-    private string $transportName;
+    private string $transport;
 
     public function __construct(
         bool $asyncEnabled = false,
@@ -26,7 +26,7 @@ class AsyncManager
         bool $mercureEnabled = false,
         ?MessageBusInterface $messageBus = null,
         LoggerInterface $logger,
-        string $transportName = 'async'
+        string $transport = 'async'
     ) {
         $this->asyncEnabled = $asyncEnabled;
         $this->messengerEnabled = $messengerEnabled;
@@ -35,7 +35,7 @@ class AsyncManager
         $this->mercureEnabled = $mercureEnabled;
         $this->messageBus = $messageBus;
         $this->logger = $logger;
-        $this->transportName = $transportName;
+        $this->transport = $transport;
     }
 
     /**
@@ -65,9 +65,9 @@ class AsyncManager
     /**
      * Définit le nom du transport à utiliser
      */
-    public function setTransportName(string $transportName): void
+    public function setTransportName(string $transport): void
     {
-        $this->transportName = $transportName;
+        $this->transport = $transport;
     }
 
     /**
@@ -94,7 +94,7 @@ class AsyncManager
             $this->messageBus->dispatch($message);
             $this->logger->info('Tâche de géolocalisation envoyée en asynchrone', [
                 'ip' => $ip, 
-                'transport' => $this->transportName
+                'transport' => $this->transport
             ]);
             return true;
         } catch (HandlerFailedException $e) {
