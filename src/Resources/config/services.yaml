@@ -21,7 +21,7 @@ services:
         class: GeolocatorBundle\Provider\IpapiProvider
         arguments:
             $httpClient: '@http_client'
-            $config: '@geolocator.config_provider.ipapi'
+            $config: '%geolocator.config_provider.ipapi%'
         tags:
             - { name: 'geolocator.provider', alias: 'ipapi' }
 
@@ -29,7 +29,7 @@ services:
         class: GeolocatorBundle\Provider\IpwhoisProvider
         arguments:
             $httpClient: '@http_client'
-            $config: '@geolocator.config_provider.ipwhois'
+            $config: '%geolocator.config_provider.ipwhois%'
         tags:
             - { name: 'geolocator.provider', alias: 'ipwhois' }
 
@@ -37,7 +37,7 @@ services:
         class: GeolocatorBundle\Provider\IpqualityscoreProvider
         arguments:
             $httpClient: '@http_client'
-            $config: '@geolocator.config_provider.ipqualityscore'
+            $config: '%geolocator.config_provider.ipqualityscore%'
         tags:
             - { name: 'geolocator.provider', alias: 'ipqualityscore' }
 
