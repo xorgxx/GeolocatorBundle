@@ -21,9 +21,7 @@ class GeolocatorCompilerPass implements CompilerPassInterface
 
         $providers = [];
         foreach ($taggedServices as $id => $tags) {
-            $providerName = isset($tags[0]['alias']) 
-                ? $tags[0]['alias'] 
-                : $this->getProviderNameFromServiceId($id);
+            $providerName = $tags[0]['alias'] ?? $this->getProviderNameFromServiceId($id);
 
             $providers[$providerName] = new Reference($id);
         }

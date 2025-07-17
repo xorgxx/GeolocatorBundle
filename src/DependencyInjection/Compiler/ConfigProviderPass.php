@@ -3,6 +3,7 @@
 namespace GeolocatorBundle\DependencyInjection\Compiler;
 
 use GeolocatorBundle\Config\ProviderConfig;
+use GeolocatorBundle\Service\ConfigAccessor;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -30,13 +31,7 @@ class ConfigProviderPass implements CompilerPassInterface
             $container->setDefinition("geolocator.config_provider.{$name}", $providerDefinition);
         }
 
-        // Créer un service de liste de providers (pour les fallbacks)
-        $container->setDefinition('geolocator.config_object', new Definition(\stdClass::class));
-        $configObject = $container->getDefinition('geolocator.config_object');
-
-        // Ajouter les méthodes pour accéder aux configurations
-        $configObject->addMethodCall('setProviders', [$providers]);
-        $configObject->addMethodCall('setDefaultProvider', [$config['providers']['default'] ?? 'ipapi']);
-        $configObject->addMethodCall('setFallbackProviders', [$config['providers']['fallback'] ?? []]);
+        // Créer un service de configuration avec ConfigAccessor
+        $container->setDefinition('geolocator.config_object', new Definition(ConfigAccessor::class, [$config]));
     }
 }

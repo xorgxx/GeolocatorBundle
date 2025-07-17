@@ -8,7 +8,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use GeolocatorBundle\Service\Geolocator;
+use GeolocatorBundle\Service\GeolocatorService;
 
 #[AsCommand(
     name: 'geolocator:test-ip',
@@ -19,7 +19,7 @@ class TestIpCommand extends Command
     private $geolocator;
     private $enabled;
 
-    public function __construct(Geolocator $geolocator, bool $enabled)
+    public function __construct(GeolocatorService $geolocator, bool $enabled)
     {
         $this->geolocator = $geolocator;
         $this->enabled = $enabled;
@@ -45,7 +45,7 @@ class TestIpCommand extends Command
         $ipAddress = $input->getArgument('ip');
 
         try {
-            $result = $this->geolocator->locate($ipAddress);
+            $result = $this->geolocator->getGeoLocation($ipAddress);
 
             if (!$result) {
                 $io->warning(sprintf('Impossible de géolocaliser l\'adresse IP "%s".', $ipAddress));

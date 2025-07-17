@@ -41,9 +41,9 @@ class GeolocatorService
         $this->config = $config;
         $this->ipResolver = $ipResolver;
         $this->eventDispatcher = $eventDispatcher;
-        $this->defaultProvider = $config[ 'providers' ][ 'default' ] ?? 'ipapi';
-        $this->fallbackProviders = $config[ 'providers' ][ 'fallback' ] ?? [];
-        $this->eventBridgeService = $config[ 'event_bridge_service' ] ?? null;
+        $this->defaultProvider = $config['providers']['default'] ?? 'ipapi';
+        $this->fallbackProviders = $config['providers']['fallback'] ?? [];
+        $this->eventBridgeService = $config['event_bridge_service'] ?? null;
         $this->asyncManager = $asyncManager;
 
         // Vérifier si nous sommes en mode fallback avec le provider local
@@ -57,7 +57,7 @@ class GeolocatorService
      */
     public function processRequest(Request $request): BanResult
     {
-        if (!$this->config[ 'enabled' ]) {
+        if (!$this->config['enabled']) {
             return new BanResult(false, 'Geolocator disabled');
         }
 
@@ -66,9 +66,10 @@ class GeolocatorService
         // Vérifier si déjà banni
         if ($this->banManager->isBanned($ip)) {
             $banInfo = $this->banManager->getBanInfo($ip);
-            $expiration = isset($banInfo[ 'expiration' ]) && $banInfo[ 'expiration' ] ? new \DateTime($banInfo[ 'expiration' ]) : null;
+            $expiration = $banInfo['expiration'] ?? null;
+            $expiration = $expiration ? new \DateTime($expiration) : null;
 
-            $result = new BanResult(true, $banInfo[ 'reason' ] ?? 'IP already banned', $ip, null, $expiration);
+            $result = new BanResult(true, $banInfo['reason'] ?? 'IP already banned', $ip, null, $expiration);
 
             $this->dispatchEvent('ban.detected', $result);
             return $result;
@@ -79,16 +80,18 @@ class GeolocatorService
             $geoLocation = $this->getGeoLocation($ip);
 
             // Filtrer les crawlers
-            if (isset($this->config['crawler_filter']) && $this->config['crawler_filter']['enabled']) {
+            if (($this->config['crawler_filter'] ?? false) && ($this->config['crawler_filter']['enabled'] ?? false)) {
                 $detectionResult = $this->crawlerFilter->detectCrawler($request, $geoLocation);
 
                 if ($detectionResult['isCrawler']) {
+                    $allowKnown = $this->config['crawler_filter']['allow_known'] ?? false;
                     $shouldBlock = $detectionResult['isKnown'] 
-                        ? (!isset($this->config['crawler_filter']['allow_known']) || !$this->config['crawler_filter']['allow_known']) 
+                        ? !$allowKnown
                         : true; // Par défaut, bloquer les crawlers non connus
 
                     if ($shouldBlock) {
-                        $reason = 'Crawler détecté' . ($detectionResult['name'] ? ' (' . $detectionResult['name'] . ')' : '');
+                        $crawlerName = $detectionResult['name'] ?? '';
+                        $reason = 'Crawler détecté' . ($crawlerName ? ' (' . $crawlerName . ')' : '');
                         return $this->handleBan($ip, $reason, $geoLocation);
                     }
                 }
@@ -162,7 +165,7 @@ class GeolocatorService
                 $dispatched = $this->asyncManager->dispatchGeolocationTask($ip);
 
                 if ($dispatched) {
-                    $this->logger->info('Demande de géolocalisation envoyée en asynchrone', [ 'ip' => $ip ]);
+                    $this->logger->info('Demande de géolocalisation envoyée en asynchrone', ['ip' => $ip]);
                     // Retourner null ou une géolocalisation par défaut
                     return null;
                 }
@@ -190,7 +193,7 @@ class GeolocatorService
     public function getGeoLocation(string $ip): GeoLocation
     {
         // Vérifier si nous sommes en mode fallback avec le provider local
-        if (isset($this->config['provider_fallback_mode']) && $this->config['provider_fallback_mode'] === true) {
+        if (($this->config['provider_fallback_mode'] ?? false) === true) {
             // En mode fallback, utiliser directement le provider local
             if (isset($this->providers['local'])) {
                 $this->logger->info("Utilisation du provider local en mode de secours pour l'IP: {$ip}");
@@ -199,9 +202,9 @@ class GeolocatorService
         }
 
         // Essayer le provider par défaut
-        if (isset($this->providers[ $this->defaultProvider ])) {
+        if (isset($this->providers[$this->defaultProvider])) {
             try {
-                return $this->providers[ $this->defaultProvider ]->getGeoLocation($ip);
+                return $this->providers[$this->defaultProvider]->getGeoLocation($ip);
             } catch (\Exception $e) {
                 $this->logger->warning('Default provider failed: ' . $e->getMessage());
             }
@@ -209,9 +212,9 @@ class GeolocatorService
 
         // Essayer les providers de fallback
         foreach ($this->fallbackProviders as $providerName) {
-            if (isset($this->providers[ $providerName ])) {
+            if (isset($this->providers[$providerName])) {
                 try {
-                    return $this->providers[ $providerName ]->getGeoLocation($ip);
+                    return $this->providers[$providerName]->getGeoLocation($ip);
                 } catch (\Exception $e) {
                     $this->logger->warning("Fallback provider $providerName failed: " . $e->getMessage());
                 }
@@ -232,7 +235,7 @@ class GeolocatorService
      */
     private function handleBan(string $ip, string $reason, ?GeoLocation $geoLocation = null, bool $permanent = false): BanResult
     {
-        if ($this->config[ 'simulate' ]) {
+        if ($this->config['simulate']) {
             $this->logger->info("SIMULATE: Would ban IP $ip for reason: $reason");
             $result = new BanResult(false, "SIMULATE: $reason", $ip, $geoLocation);
             $this->dispatchEvent('ban.simulated', $result);
