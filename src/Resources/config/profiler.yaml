@@ -10,9 +10,10 @@ services:
 
     # Debug controller
     geolocator.controller.debug:
-        class: GeolocatorBundle\Controller\DebugController
+        class: GeolocatorBundle\Controller\GeolocatorDebugController
         arguments:
             $geolocator: '@geolocator.service'
             $enabled: '%geolocator.enabled%'
-            $twig: '@twig'
+            $simulate: '%geolocator.simulate%'
+            $redirectOnBan: '%geolocator.redirect_on_ban%'
         tags: ['controller.service_arguments']
