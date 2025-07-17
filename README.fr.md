@@ -88,7 +88,7 @@ framework:
 ### Usage
 
 ```php
-use Xorg\GeolocatorBundle\Attribute\GeoFilter;
+use App\Bundle\GeolocatorBundle\Attribute\GeoFilter;
 
 #[GeoFilter(
     blockedCountries: ['CN','RU'],

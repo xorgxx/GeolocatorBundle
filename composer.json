@@ -7,19 +7,35 @@
   "license": "MIT",
   "require": {
     "php": ">=8.2",
+    "symfony/framework-bundle": "^6.0|^7.0",
     "symfony/http-kernel": "^6.0|^7.0",
     "symfony/dependency-injection": "^6.0|^7.0",
     "symfony/config": "^6.0|^7.0",
-    "psr/log": "^1.0|^2.0|^3.0"
+    "psr/log": "^1.0|^2.0|^3.0",
+    "monolog/monolog": "^2.0|^3.0",
+    "symfony/monolog-bundle": "^3.0",
+    "symfony/twig-bundle": "^6.0|^7.0",
+    "symfony/http-client": "^6.0|^7.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10.0",
+    "symfony/browser-kit": "^6.0|^7.0",
+    "symfony/css-selector": "^6.0|^7.0",
+    "symfony/phpunit-bridge": "^6.0|^7.0",
+    "symfony/debug-bundle": "^6.0|^7.0",
+    "friendsofphp/php-cs-fixer": "^3.0"
+  },
+  "suggest": {
+    "symfony/redis-messenger": "Pour utiliser Redis comme transport de messages",
+    "symfony/amqp-messenger": "Pour utiliser RabbitMQ comme transport de messages",
+    "predis/predis": "Pour utiliser Redis comme stockage des bans",
+    "symfony/mercure-bundle": "Live ban notifications via Mercure",
+    "symfony/messenger": "Live ban notifications via RabbitMq"
   },
   "autoload": {
     "psr-4": {
       "GeolocatorBundle\\": "src/"
     }
-  },
-  "suggest": {
-    "symfony/mercure-bundle": "Live ban notifications via Mercure",
-    "symfony/messenger": "Live ban notifications via RabbitMq"
   },
   "extra": {
     "branch-alias": {

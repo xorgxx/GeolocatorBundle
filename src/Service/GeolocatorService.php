@@ -1,160 +1,255 @@
 <?php
-declare(strict_types=1);
 
 namespace GeolocatorBundle\Service;
 
-use GeolocatorBundle\Provider\GeolocationProviderInterface;
+use GeolocatorBundle\Event\GeolocatorEvent;
+use GeolocatorBundle\Model\BanResult;
+use GeolocatorBundle\Model\GeoLocation;
+use GeolocatorBundle\Storage\StorageInterface;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
-use InvalidArgumentException;
-use RuntimeException;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\Request;
 
-/**
- * Main service for the geolocation of IP addresses.
- * Manages the cache, attempts to the Providers and the Fallback.
- */
-final class GeolocatorService
+class GeolocatorService
 {
-    private ProviderManager    $providerManager;
-    private GeolocationCache   $geolocCache;
-    private LoggerInterface    $logger;
-    private int                $maxRetries;
-    private bool               $fallbackEnabled;
+    private array                     $providers;
+    private array                     $fallbackProviders;
+    private string                    $defaultProvider;
+    private StorageInterface          $storage;
+    private BanManager                $banManager;
+    private CountryFilter             $countryFilter;
+    private IpFilter                  $ipFilter;
+    private VpnDetector               $vpnDetector;
+    private CrawlerFilter             $crawlerFilter;
+    private LoggerInterface           $logger;
+    private array                     $config;
+    private ?EventDispatcherInterface $eventDispatcher;
+    private ?string                   $eventBridgeService;
+    private IpResolver                $ipResolver;
+    private ?AsyncManager             $asyncManager;
 
-    /**
-     * @Param ProviderManager $ProviderManager Manager of Providers Round-Robin.
-     * @Param geolocationcache $geoloccache hides geolocated results.
-     * @Param Loggerinterface $Logger Logger PSR-3 (Monolog or Nulllogger).
-     * @Param int $maxretries number max. attempts (> = 1).
-     * @Param Bool $FallbacKeabled Activates the default in case of failure.
-     *
-     * @throws invalidargumentexception if $ maxretries <1.
-     */
-    public function __construct(
-        ProviderManager $providerManager,
-        GeolocationCache $geolocCache,
-        LoggerInterface $logger,
-        int $maxRetries = 3,
-        bool $fallbackEnabled = true
-    ) {
-        if ($maxRetries < 1) {
-            throw new InvalidArgumentException(sprintf('maxRetries must be >= 1, %d provided', $maxRetries
-            ));
-        }
-
-        $this->providerManager = $providerManager;
-        $this->geolocCache     = $geolocCache;
-        $this->logger          = $logger;
-        $this->maxRetries      = $maxRetries;
-        $this->fallbackEnabled = $fallbackEnabled;
+    public function __construct(array $providers, StorageInterface $storage, BanManager $banManager, CountryFilter $countryFilter, VpnDetector $vpnDetector, CrawlerFilter $crawlerFilter, LoggerInterface $logger, array $config, IpResolver $ipResolver, ?EventDispatcherInterface $eventDispatcher = null, ?AsyncManager $asyncManager = null)
+    {
+        $this->providers = $providers;
+        $this->storage = $storage;
+        $this->banManager = $banManager;
+        $this->countryFilter = $countryFilter;
+        $this->ipFilter = $ipFilter;
+        $this->vpnDetector = $vpnDetector;
+        $this->crawlerFilter = $crawlerFilter;
+        $this->logger = $logger;
+        $this->config = $config;
+        $this->ipResolver = $ipResolver;
+        $this->eventDispatcher = $eventDispatcher;
+        $this->defaultProvider = $config[ 'providers' ][ 'default' ] ?? 'ipapi';
+        $this->fallbackProviders = $config[ 'providers' ][ 'fallback' ] ?? [];
+        $this->eventBridgeService = $config[ 'event_bridge_service' ] ?? null;
+        $this->asyncManager = $asyncManager;
     }
 
     /**
-     * Geolocalizes an IP with error management and Fallback.
-     *
-     * @Param String $IP IP address to geolocate.
-     * @Param String | Null $preferredprovider name of the provider to force (optional).
-     *
-     * @return array geolocation data.
-     *
-     * @throws invalidargumentexception if the IP is invalid.
-     * @throws runtimeexception if the fallback is disabled and all attempts fail.
+     * Traite une requête HTTP et vérifie si elle doit être bloquée.
      */
-    public function locateIp(string $ip, ?string $preferredProvider = null): array
+    public function processRequest(Request $request): BanResult
     {
-        if (!filter_var($ip, FILTER_VALIDATE_IP)) {
-            throw new InvalidArgumentException(sprintf('Invalid IP address: %s', $ip));
+        if (!$this->config[ 'enabled' ]) {
+            return new BanResult(false, 'Geolocator disabled');
         }
 
-        // 1) Cache hit?
-        $cacheResult = $this->geolocCache->get($ip);
-        if (null !== $cacheResult) {
-            $this->logger->debug(sprintf('IP %s found in cache', $ip));
-            return $cacheResult;
+        $ip = $this->getClientIp($request);
+
+        // Vérifier si déjà banni
+        if ($this->banManager->isBanned($ip)) {
+            $banInfo = $this->banManager->getBanInfo($ip);
+            $expiration = isset($banInfo[ 'expiration' ]) && $banInfo[ 'expiration' ] ? new \DateTime($banInfo[ 'expiration' ]) : null;
+
+            $result = new BanResult(true, $banInfo[ 'reason' ] ?? 'IP already banned', $ip, null, $expiration);
+
+            $this->dispatchEvent('ban.detected', $result);
+            return $result;
         }
 
-        // 2) Reset providers for this request
-        $this->providerManager->resetTriedProviders();
+        try {
+            // Obtenir la géolocalisation
+            $geoLocation = $this->getGeoLocation($ip);
 
-        $lastError = null;
-        for ($attempt = 1; $attempt <= $this->maxRetries; $attempt++) {
-            try {
-                $provider = null !== $preferredProvider
-                    ? $this->providerManager->getProviderByName($preferredProvider)
-                    : $this->providerManager->getNextProvider();
+            // Filtrer les crawlers
+            if (isset($this->config['crawler_filter']) && $this->config['crawler_filter']['enabled']) {
+                $detectionResult = $this->crawlerFilter->detectCrawler($request, $geoLocation);
 
-                $this->logger->info(sprintf('Attempt [%d/%d] geolocation for %s with %s', $attempt, $this->maxRetries, $ip, $provider->getName()));
+                if ($detectionResult['isCrawler']) {
+                    $shouldBlock = $detectionResult['isKnown'] 
+                        ? (!isset($this->config['crawler_filter']['allow_known']) || !$this->config['crawler_filter']['allow_known']) 
+                        : true; // Par défaut, bloquer les crawlers non connus
 
-                $result = $provider->locate($ip);
-
-                if (($result[ 'error' ] ?? false) === true) {
-                    $this->logger->warning(sprintf('Provider %s returned an error for %s: %s', $provider->getName(), $ip, $result[ 'message' ] ?? 'unknown'));
-                    $this->providerManager->markProviderTried($provider);
-                    $lastError = $result;
-                    continue;
+                    if ($shouldBlock) {
+                        $reason = 'Crawler détecté' . ($detectionResult['name'] ? ' (' . $detectionResult['name'] . ')' : '');
+                        return $this->handleBan($ip, $reason, $geoLocation);
+                    }
                 }
+            }
 
-                // Success!
-                $this->logger->info(sprintf('Geolocation successful for %s with %s', $ip, $provider->getName()));
-                $this->geolocCache->set($ip, $result);
-                return $result;
-            } catch (\Throwable $e) {
-                $this->logger->error(sprintf(
-                    'Exception [%d/%d] pour %s : %s',
-                    $attempt, $this->maxRetries, $ip, $e->getMessage()
-                ), ['exception' => $e]);
-                $lastError = [
-                    'error'   => true,
-                    'message' => $e->getMessage(),
-                ];
+            // Filtrer par pays
+            if (!$this->countryFilter->isAllowed($geoLocation->getCountryCode())) {
+                $isPermanent = $this->countryFilter->isPermanentlyBanned($geoLocation->getCountryCode());
+                return $this->handleBan($ip, 'Country blocked: ' . $geoLocation->getCountryCode(), $geoLocation, $isPermanent);
+            }
+
+            // Détecter VPN
+            if ($this->vpnDetector->isVpn($ip, $geoLocation)) {
+                return $this->handleBan($ip, 'VPN/Proxy detected', $geoLocation);
+            }
+
+            // La requête est autorisée
+            $result = new BanResult(false, 'Request allowed', $ip, $geoLocation);
+            $this->dispatchEvent('request.allowed', $result);
+            return $result;
+
+        } catch (\Exception $e) {
+            $this->logger->error('Geolocator error: ' . $e->getMessage(), [ 'ip' => $ip ]);
+
+            // En cas d'erreur, on laisse passer par défaut
+            return new BanResult(false, 'Error occurred, allowing request', $ip);
+        }
+    }
+
+    /**
+     * Récupère l'adresse IP du client à partir de la requête de manière sécurisée.
+     */
+    public function getClientIp(Request $request): string
+    {
+        return $this->ipResolver->getClientIp($request);
+    }
+
+    /**
+     * Vérifie si une adresse IP est autorisée selon les règles de filtrage IP
+     */
+    public function isIpAllowed(string $ip): bool
+    {
+        return $this->ipFilter->isAllowed($ip);
+    }
+
+    /**
+     * Récupère le service de filtrage des crawlers.
+     *
+     * @return CrawlerFilter
+     */
+    public function getCrawlerFilter(): CrawlerFilter
+    {
+        return $this->crawlerFilter;
+    }
+
+    /**
+     * Récupère les informations de géolocalisation à partir d'une requête HTTP.
+     *
+     * @param Request $request La requête HTTP
+     * @param bool $useAsync Utiliser le mode asynchrone si disponible
+     * @return GeoLocation|null Les informations de géolocalisation ou null en cas d'erreur
+     */
+    public function getGeoLocationFromRequest(Request $request, bool $useAsync = false): ?GeoLocation
+    {
+        try {
+            $ip = $this->getClientIp($request);
+
+            // Vérifier si on veut utiliser le mode asynchrone
+            if ($useAsync && $this->asyncManager !== null && $this->asyncManager->isAsyncAvailable()) {
+                // Essayer d'envoyer en asynchrone
+                $dispatched = $this->asyncManager->dispatchGeolocationTask($ip);
+
+                if ($dispatched) {
+                    $this->logger->info('Demande de géolocalisation envoyée en asynchrone', [ 'ip' => $ip ]);
+                    // Retourner null ou une géolocalisation par défaut
+                    return null;
+                }
+            }
+
+            // Mode synchrone (par défaut ou fallback si l'asynchrone échoue)
+            return $this->getGeoLocation($ip);
+        } catch (\Exception $e) {
+            $this->logger->error('Géolocalisation depuis requête échouée: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Détermine si le mode asynchrone est disponible
+     */
+    public function isAsyncAvailable(): bool
+    {
+        return $this->asyncManager !== null && $this->asyncManager->isAsyncAvailable();
+    }
+
+    /**
+     * Récupère les informations de géolocalisation pour une adresse IP.
+     */
+    public function getGeoLocation(string $ip): GeoLocation
+    {
+        // Essayer le provider par défaut
+        if (isset($this->providers[ $this->defaultProvider ])) {
+            try {
+                return $this->providers[ $this->defaultProvider ]->getGeoLocation($ip);
+            } catch (\Exception $e) {
+                $this->logger->warning('Default provider failed: ' . $e->getMessage());
             }
         }
 
-        // 3) All attempts have failed
-        $this->logger->critical(sprintf(
-            'Failed after %d attempts for %s', $this->maxRetries, $ip), [ 'lastError' => $lastError ]);
-
-        if (!$this->fallbackEnabled) {
-            throw new RuntimeException(sprintf('Geolocation impossible for %s', $ip));
+        // Essayer les providers de fallback
+        foreach ($this->fallbackProviders as $providerName) {
+            if (isset($this->providers[ $providerName ])) {
+                try {
+                    return $this->providers[ $providerName ]->getGeoLocation($ip);
+                } catch (\Exception $e) {
+                    $this->logger->warning("Fallback provider $providerName failed: " . $e->getMessage());
+                }
+            }
         }
 
-        // 4) Return fallback data
-        return [
-            'error'      => true,
-            'ip'         => $ip,
-            'message'    => sprintf(
-                'Geolocation failed after %d attempts', $this->maxRetries),
-            'last_error' => $lastError,
-            'fallback'   => true,
-            'country'    => null,
-            'continent'  => null,
-            'is_vpn'     => false,
-            'asn'        => null,
-            'isp'        => null,
-        ];
+        throw new \RuntimeException('All providers failed');
     }
 
     /**
-     * Activates or deactivates the Fallback.
+     * Gère le bannissement d'une IP.
      */
-    public function setFallbackEnabled(bool $enabled): void
+    private function handleBan(string $ip, string $reason, ?GeoLocation $geoLocation = null, bool $permanent = false): BanResult
     {
-        $this->fallbackEnabled = $enabled;
+        if ($this->config[ 'simulate' ]) {
+            $this->logger->info("SIMULATE: Would ban IP $ip for reason: $reason");
+            $result = new BanResult(false, "SIMULATE: $reason", $ip, $geoLocation);
+            $this->dispatchEvent('ban.simulated', $result);
+            return $result;
+        }
+
+        $expiration = $this->banManager->banIp($ip, $reason, $permanent);
+        $this->logger->warning("IP banned: $ip for reason: $reason");
+
+        $result = new BanResult(true, $reason, $ip, $geoLocation, $expiration);
+        $this->dispatchEvent('ban.added', $result);
+
+        return $result;
     }
 
     /**
-     * Defines the maximum number of providers attempts.
-     *
-     * @throws invalidargumentexception if $max retries <1.
+     * Dispatche un événement via EventDispatcher ou via un service bridge.
      */
-    public function setMaxRetries(int $maxRetries): void
+    private function dispatchEvent(string $eventName, BanResult $result): void
     {
-        if ($maxRetries < 1) {
-            throw new InvalidArgumentException(sprintf(
-                'maxRetries doit être >= 1, %d fourni',
-                $maxRetries
-            ));
+        // Si un service de bridge d'événement est configuré, l'utiliser
+        if ($this->eventBridgeService !== null) {
+            try {
+                $bridge = null; // Remplacé par l'appel au service container dans le GeolocatorListener
+                if ($bridge && method_exists($bridge, 'dispatchEvent')) {
+                    $bridge->dispatchEvent($eventName, $result);
+                    return;
+                }
+            } catch (\Exception $e) {
+                $this->logger->error('Failed to dispatch event via bridge: ' . $e->getMessage());
+            }
         }
-        $this->maxRetries = $maxRetries;
+
+        // Utiliser l'EventDispatcher si disponible
+        if ($this->eventDispatcher !== null) {
+            $event = new GeolocatorEvent($result);
+            $this->eventDispatcher->dispatch($event, 'geolocator.' . $eventName);
+        }
     }
 }

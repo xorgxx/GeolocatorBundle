@@ -1,0 +1,226 @@
+{% extends '@WebProfiler/Profiler/layout.html.twig' %}
+
+{% block toolbar %}
+    {% set icon %}
+        {# Cette icône apparaîtra dans la barre d'outils #}
+        <span class="icon">
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PHBhdGggZD0iTTIgMTJoMjBNMTIgMmExNS4zIDE1LjMgMCAwIDEgNCAxMCAxNS4zIDE1LjMgMCAwIDEtNCAxMCAxNS4zIDE1LjMgMCAwIDEtNC0xMCAxNS4zIDE1LjMgMCAwIDEgNC0xMHoiLz48L3N2Zz4=" alt="Geolocator">
+        </span>
+
+        {% if collector.isBanned %}
+            <span class="sf-toolbar-value sf-toolbar-status-red">{{ collector.country }}</span>
+        {% elseif collector.isVpn %}
+            <span class="sf-toolbar-value sf-toolbar-status-yellow">{{ collector.country }}</span>
+        {% else %}
+            <span class="sf-toolbar-value">{{ collector.country }}</span>
+        {% endif %}
+    {% endset %}
+
+    {% set text %}
+        <div class="sf-toolbar-info-piece">
+            <b>IP</b> <span>{{ collector.ip }}</span>
+        </div>
+
+        <div class="sf-toolbar-info-piece">
+            <b>Pays</b> <span>{{ collector.countryName }} ({{ collector.country }})</span>
+        </div>
+
+        <div class="sf-toolbar-info-piece">
+            <b>Ville</b> <span>{{ collector.city|default('Inconnue') }}</span>
+        </div>
+
+        {% if collector.isBanned %}
+            <div class="sf-toolbar-info-piece">
+                <b>Statut</b> <span class="sf-toolbar-status sf-toolbar-status-red">BLOQUÉ</span>
+            </div>
+        {% endif %}
+
+        {% if collector.isVpn %}
+            <div class="sf-toolbar-info-piece">
+                <b>VPN/Proxy</b> <span class="sf-toolbar-status sf-toolbar-status-yellow">Détecté</span>
+            </div>
+        {% endif %}
+
+        {% if collector.isCrawler %}
+            <div class="sf-toolbar-info-piece">
+                <b>Crawler</b> <span class="sf-toolbar-status sf-toolbar-status-yellow">Détecté</span>
+            </div>
+        {% endif %}
+
+        {% if collector.isSimulationMode %}
+            <div class="sf-toolbar-info-piece">
+                <b>Mode</b> <span class="sf-toolbar-status sf-toolbar-status-yellow">Simulation</span>
+            </div>
+        {% endif %}
+    {% endset %}
+
+    {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { link: profiler_url }) }}
+{% endblock %}
+
+{% block menu %}
+    <span class="label {{ collector.isBanned ? 'label-status-error' : '' }} {{ collector.isVpn ? 'label-status-warning' : '' }}">
+        <span class="icon">
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PHBhdGggZD0iTTIgMTJoMjBNMTIgMmExNS4zIDE1LjMgMCAwIDEgNCAxMCAxNS4zIDE1LjMgMCAwIDEtNCAxMCAxNS4zIDE1LjMgMCAwIDEtNC0xMCAxNS4zIDE1LjMgMCAwIDEgNC0xMHoiLz48L3N2Zz4=" alt="Geolocator">
+        </span>
+        <strong>Géolocalisation</strong>
+        {% if collector.isBanned %}
+            <span class="count">
+                <span>Bloqué</span>
+            </span>
+        {% endif %}
+    </span>
+{% endblock %}
+
+{% block panel %}
+    <h2>Informations de géolocalisation</h2>
+
+    <div class="metrics">
+        <div class="metric">
+            <span class="value">{{ collector.ip }}</span>
+            <span class="label">Adresse IP</span>
+        </div>
+
+        <div class="metric">
+            <span class="value">{{ collector.country }}</span>
+            <span class="label">Code pays</span>
+        </div>
+
+        <div class="metric">
+            <span class="value">{{ collector.countryName|default('Inconnu') }}</span>
+            <span class="label">Pays</span>
+        </div>
+
+        <div class="metric">
+            <span class="value">{{ collector.city|default('Inconnue') }}</span>
+            <span class="label">Ville</span>
+        </div>
+    </div>
+
+    <h3>Détails</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Propriété</th>
+                <th>Valeur</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Provider utilisé</td>
+                <td>{{ collector.providerUsed|default('Aucun') }}</td>
+            </tr>
+            <tr>
+                <td>Coordonnées</td>
+                <td>
+                    {% if collector.coordinates.latitude and collector.coordinates.longitude %}
+                        {{ collector.coordinates.latitude }}, {{ collector.coordinates.longitude }}
+                        <a href="https://www.openstreetmap.org/?mlat={{ collector.coordinates.latitude }}&mlon={{ collector.coordinates.longitude }}&zoom=12" target="_blank" rel="noopener">
+                            (voir sur la carte)
+                        </a>
+                    {% else %}
+                        Non disponibles
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>Statut</td>
+                <td>
+                    {% if collector.isBanned %}
+                        <span class="status-error">BLOQUÉ</span>
+                    {% else %}
+                        <span class="status-success">Autorisé</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>VPN/Proxy</td>
+                <td>
+                    {% if collector.isVpn %}
+                        <span class="status-warning">Détecté</span>
+                    {% else %}
+                        <span class="status-success">Non détecté</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>Crawler</td>
+                <td>
+                    {% if collector.isCrawler %}
+                        <span class="status-warning">Détecté</span>
+                    {% else %}
+                        <span class="status-success">Non détecté</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>Mode simulation</td>
+                <td>
+                    {% if collector.isSimulationMode %}
+                        <span class="status-warning">Activé</span>
+                    {% else %}
+                        <span class="status-success">Désactivé</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>Mode asynchrone</td>
+                <td>
+                    {% if collector.isAsyncAvailable %}
+                        <span class="status-success">Disponible</span>
+                    {% else %}
+                        <span class="status-warning">Non disponible</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>Filtre IP</td>
+                <td>
+                    {% if collector.data.ip_filter.in_allow_list %}
+                        <span class="status-success">IP dans la liste d'autorisation</span>
+                    {% endif %}
+                    {% if collector.data.ip_filter.in_block_list %}
+                        <span class="status-error">IP dans la liste de blocage</span>
+                    {% endif %}
+                    {% if not collector.data.ip_filter.in_allow_list and not collector.data.ip_filter.in_block_list %}
+                        <span class="status-normal">IP non listée</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    {% if collector.isBanned and collector.banInfo %}
+        <h3>Informations de bannissement</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Propriété</th>
+                    <th>Valeur</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Raison</td>
+                    <td>{{ collector.banInfo.reason|default('Non spécifiée') }}</td>
+                </tr>
+                <tr>
+                    <td>Date de bannissement</td>
+                    <td>{{ collector.banInfo.timestamp ? collector.banInfo.timestamp|date('Y-m-d H:i:s') : 'Inconnue' }}</td>
+                </tr>
+                <tr>
+                    <td>Durée</td>
+                    <td>
+                        {% if collector.banInfo.expiration %}
+                            {{ collector.banInfo.expiration|date('Y-m-d H:i:s') }} 
+                            (expire dans {{ ((collector.banInfo.expiration - date().timestamp) / 3600)|round(1) }} heures)
+                        {% else %}
+                            Permanent
+                        {% endif %}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

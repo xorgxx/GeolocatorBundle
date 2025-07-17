@@ -1,116 +1,149 @@
-parameters:
-    # Injection brute de toute la config geolocator
-    geolocator.config: '%geolocator%'
-
 services:
-    _defaults:
-        autowire: true
-        autoconfigure: true
-        public: false
-
-    # --- Import des services principaux par domaine ---
-    GeolocatorBundle\Service\:
-        resource: '../../Service'
-
-#    GeolocatorBundle\Provider\:
-#        resource: '../../Provider'
-
-    GeolocatorBundle\Export\:
-        resource: '../../Export'
-
-    GeolocatorBundle\Command\:
-        resource: '../../Command'
-        tags: ['console.command']
-
-    # --- Écouteurs et abonnés d'événements ---
-    GeolocatorBundle\EventSubscriber\:
-        resource: '../../EventSubscriber'
-        tags:
-            - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest }
-
-    # --- Filtres géographiques ---
-    GeolocatorBundle\Filter\:
-        resource: '../../Filter'
-        tags: ['neox.geofilter.filter']
-
-    # Enregistrement automatique des providers
-    GeolocatorBundle\Provider\:
-        resource: '../../Provider'
-        tags: ['geolocator.provider']
-
-    # Manager des providers
-    GeolocatorBundle\Service\ProviderManager:
+    # Services principaux
+    geolocator.service:
+        class: GeolocatorBundle\Service\GeolocatorService
         arguments:
+            $providers: [] # Rempli par le compiler pass
+            $storage: '@geolocator.storage'
+            $banManager: '@geolocator.ban_manager'
+            $countryFilter: '@geolocator.country_filter'
+            $ipFilter: '@geolocator.ip_filter'
+            $vpnDetector: '@geolocator.vpn_detector'
+            $crawlerFilter: '@geolocator.crawler_filter'
+            $logger: '@monolog.logger.geolocator'
             $config: '%geolocator.config%'
-            $taggedProviders: !tagged_iterator geolocator.provider
-            $logger: '@logger'
+            $ipResolver: '@geolocator.ip_resolver'
 
-    # Configuration spécifique pour le filtre VPN
-    GeolocatorBundle\Filter\VpnFilter:
-        arguments:
-            $enabled: '%geolocator.vpn_detection.enabled%'
-            $allowedIps: '%geolocator.vpn_detection.allowed_ips%'
-            $logger: '@logger'
-        tags: ['neox.geofilter.filter']
-
-    # --- Déclarations explicites pour services spécifiques ---
-    GeolocatorBundle\Service\WebhookNotifier:
+    # Providers de géolocalisation
+    geolocator.provider.ipapi:
+        class: GeolocatorBundle\Provider\IpapiProvider
         arguments:
             $httpClient: '@http_client'
-            $webhookUrls: '%geolocator.webhooks%'
-            $logger: '@logger'
-
-    GeolocatorBundle\Filter\FilterChain:
-        arguments:
-            $filters: !tagged_iterator neox.geofilter.filter
-
-    GeolocatorBundle\Service\AsyncGeolocator :
-        arguments :
-            $transport : '%geolocator.messenger_transport%'
-
-    GeolocatorBundle\DataCollector\GeolocatorDataCollector:
-        arguments:
-            $asyncLocator: '@GeolocatorBundle\Service\AsyncGeolocator'
+            $config: '%geolocator.providers.list.ipapi%'
         tags:
-            - { name: data_collector, template: '@Geolocator/collector/geolocator.html.twig', id: geolocator }
+            - { name: 'geolocator.provider', alias: 'ipapi' }
 
-    GeolocatorBundle\EventSubscriber\GeoFilterSubscriber:
+    geolocator.provider.ipwhois:
+        class: GeolocatorBundle\Provider\IpwhoisProvider
         arguments:
-            $ipResolver: '@GeolocatorBundle\Service\IpResolver'
-            $geolocatorService: '@GeolocatorBundle\Service\GeolocatorService'
-            $banManager: '@GeolocatorBundle\Service\BanManager'
-            $filterChain: '@GeolocatorBundle\Filter\FilterChain'
-            $eventDispatcher: '@event_dispatcher'
-            $params: '@parameter_bag'
+            $httpClient: '@http_client'
+            $config: '%geolocator.providers.list.ipwhois%'
+        tags:
+            - { name: 'geolocator.provider', alias: 'ipwhois' }
 
-    GeolocatorBundle\Service\IpResolver:
-        bind:
-            $filterFlags: '%geolocator.ip_filter_flags%'
-
-    GeolocatorBundle\Service\GeolocationCache:
+    geolocator.provider.ipqualityscore:
+        class: GeolocatorBundle\Provider\IpqualityscoreProvider
         arguments:
-            $cachePool: '@cache.app'
-            $providerManager: '@GeolocatorBundle\Service\ProviderManager'
-            $ttl: '%geolocator.cache_ttl%'
+            $httpClient: '@http_client'
+            $config: '%geolocator.providers.list.ipqualityscore%'
+        tags:
+            - { name: 'geolocator.provider', alias: 'ipqualityscore' }
 
-    GeolocatorBundle\Service\BotDetector:
+    # Stockage
+    geolocator.storage.memory:
+        class: GeolocatorBundle\Storage\MemoryStorage
+
+    geolocator.storage.json:
+        class: GeolocatorBundle\Storage\JsonStorage
         arguments:
-            $botPatterns: '%geolocator.bot_patterns%'
-            $challengeMode: '%geolocator.bot_challenge_enabled%'
+            $filePath: '%geolocator.storage.file%'
 
-    session: '@Symfony\Component\HttpFoundation\RequestStack'
-
-    GeolocatorBundle\Service\BanManager:
+    geolocator.storage.redis:
+        class: GeolocatorBundle\Storage\RedisStorage
         arguments:
-            $config: '%geolocator%'
-            $logger: '@logger'
-            $eventBridge: '@?GeolocatorBundle\Bridge\GeolocatorEventBridgeInterface'
+            $redisDsn: '%geolocator.storage.redis_dsn%'
 
-#    GeolocatorBundle\Service\ProviderManager:
-#        arguments:
-#            $providers: !tagged_iterator geolocator.provider
-
-    # Configuration explicite pour FilterResult
-    GeolocatorBundle\Filter\FilterResult:
+    # Gestionnaire de ban
+    geolocator.ban_manager:
+        class: GeolocatorBundle\Service\BanManager
         arguments:
-            $blocked: false # Valeur par défaut
+            $storage: '@geolocator.storage'
+            $config: '%geolocator.bans%'
+            $logger: '@monolog.logger.geolocator'
+
+    # Filtres
+    geolocator.country_filter:
+        class: GeolocatorBundle\Service\CountryFilter
+        arguments:
+            $config: '%geolocator.country_filters%'
+
+    geolocator.ip_filter:
+        class: GeolocatorBundle\Service\IpFilter
+        arguments:
+            $config: '%geolocator.ip_filters%'
+            $logger: '@monolog.logger.geolocator'
+
+    geolocator.vpn_detector:
+        class: GeolocatorBundle\Service\VpnDetector
+        arguments:
+            $config: '%geolocator.vpn_detection%'
+            $providers: [] # Rempli par le compiler pass
+            $allowedIps: '%geolocator.vpn_detection.allowed_ips%'
+
+    geolocator.crawler_filter:
+        class: GeolocatorBundle\Service\CrawlerFilter
+        arguments:
+            $config: '%geolocator.crawler_filter%'
+
+    # Événements et listeners
+    geolocator.event_listener:
+        class: GeolocatorBundle\EventListener\GeolocatorListener
+        arguments:
+            $geolocator: '@geolocator.service'
+            $redirectUrl: '%geolocator.redirect_on_ban%'
+            $enabled: '%geolocator.enabled%'
+            $simulate: '%geolocator.simulate%'
+        tags:
+            - { name: kernel.event_listener, event: kernel.request, priority: 30 }
+
+    geolocator.geo_filter_listener:
+        class: GeolocatorBundle\EventListener\GeoFilterListener
+        arguments:
+            $geolocator: '@geolocator.service'
+            $globalRedirectUrl: '%geolocator.redirect_on_ban%'
+        tags:
+            - { name: kernel.event_subscriber }
+
+    # Data collectors pour le profiler
+    geolocator.data_collector:
+        class: GeolocatorBundle\DataCollector\GeolocatorDataCollector
+        arguments:
+            $geolocator: '@geolocator.service'
+            $enabled: '%geolocator.profiler.enabled%'
+        tags:
+            - { name: data_collector, template: '@Geolocator/Collector/geolocator.html.twig', id: 'geolocator' }
+
+    # Monolog handler
+    monolog.logger.geolocator:
+        class: Symfony\Bridge\Monolog\Logger
+        arguments: ['geolocator']
+        calls:
+            - [pushHandler, ['@monolog.handler.geolocator']]
+
+    monolog.handler.geolocator:
+        class: Monolog\Handler\StreamHandler
+        arguments:
+            - '%kernel.logs_dir%/geolocator.log'
+            - 'warning' # Niveau par défaut
+
+    # Service de résolution d'IP sécurisé
+    geolocator.ip_resolver:
+        class: GeolocatorBundle\Service\IpResolver
+        arguments:
+            $trustedHeaders: '%geolocator.ip_filter_flags%'
+            $trustedProxies: '%geolocator.trusted_proxies%'
+
+    # HTTP Client service pour les appels API
+    http_client:
+        class: Symfony\Component\HttpClient\HttpClient
+        factory: ['Symfony\Component\HttpClient\HttpClient', 'create']
+
+    # Contrôleur de base abstrait
+    geolocator.controller.base:
+        abstract: true
+        class: GeolocatorBundle\Controller\BaseGeolocatorController
+        arguments:
+            $geolocator: '@geolocator.service'
+            $enabled: '%geolocator.enabled%'
+            $simulate: '%geolocator.simulate%'
+            $redirectOnBan: '%geolocator.redirect_on_ban%'

@@ -2,104 +2,124 @@
 
 ## Introduction
 
-Le GeolocatorBundle implémente une stratégie robuste de fallback pour gérer les cas où les fournisseurs de géolocalisation rencontrent des problèmes. Cette documentation explique comment le système gère les différents types d'erreurs et assure la continuité du service.
+Le GeolocatorBundle implémente une stratégie de fallback robuste pour gérer les cas d'erreurs ou d'indisponibilité des fournisseurs de géolocalisation. Cette documentation détaille le fonctionnement de cette stratégie et comment la configurer.
 
-## Types d'erreurs gérées
+## Principe de fonctionnement
 
-1. **Timeout** : Le fournisseur ne répond pas dans le délai imparti (par défaut 3 secondes)
-2. **Erreur HTTP** : Le fournisseur renvoie un code d'erreur (4xx, 5xx)
-3. **Refus d'accès** : Le fournisseur refuse l'accès (403, 429 rate limit)
-4. **Erreur de parsing** : Les données reçues ne sont pas dans le format attendu
+La stratégie de fallback fonctionne sur plusieurs niveaux :
 
-## Fonctionnement du fallback
+1. **Fournisseur principal** : Le bundle tente d'abord d'utiliser le fournisseur défini comme `default` dans la configuration.
+2. **Fournisseurs de secours** : En cas d'échec du fournisseur principal, le bundle utilise les fournisseurs de secours définis dans la liste `fallback`.
+3. **Exclusion temporaire** : Les fournisseurs qui échouent sont temporairement exclus pour éviter de continuer à faire des requêtes qui échoueront.
+4. **Réintégration automatique** : Après un délai configurable, les fournisseurs exclus sont réintégrés pour tester à nouveau leur disponibilité.
 
-### 1. Principe de base
+## Configuration
 
-Le `GeolocatorService` essaie d'obtenir des données de géolocalisation selon la séquence suivante :
-
-```
-Cache → Fournisseur 1 → Fournisseur 2 → ... → Fournisseur N → Réponse par défaut
-```
-
-### 2. Mécanisme d'exclusion temporaire
-
-- Après un certain nombre d'erreurs (par défaut 3), un fournisseur est marqué comme indisponible
-- Les fournisseurs indisponibles sont automatiquement ignorés par le `ProviderManager`
-- Le système teste périodiquement si les fournisseurs redeviennent disponibles
-
-### 3. Configuration
+### Configuration de base
 
 ```yaml
-# config/packages/geolocator.yaml
 geolocator:
-  fallback_enabled: true     # Active/désactive la stratégie de fallback
-  max_retries: 3             # Nombre maximum de tentatives avant de renvoyer une réponse par défaut
-  provider_timeout: 3        # Délai d'attente en secondes pour chaque fournisseur
-  provider_errors_threshold: 3  # Nombre d'erreurs avant de marquer un fournisseur comme indisponible
+  providers:
+    default: 'ipapi'           # Fournisseur principal
+    list:                      # Liste des fournisseurs disponibles
+      ipapi:
+        dsn: 'https://ipapi.co/{ip}/json/'
+      ipwhois:
+        dsn: 'https://ipwhois.app/json/{ip}'
+      ipqualityscore:
+        dsn: 'https://ipqualityscore.com/api/json/ip/{apikey}/{ip}'
+        apikey: '%env(IPQUALITYSCORE_APIKEY)%'
+    fallback: [ 'ipwhois', 'ipapi' ]  # Fournisseurs de secours
 ```
 
-## Réponse par défaut
+### Configuration avancée
 
-Si tous les fournisseurs échouent, le système renvoie une réponse par défaut avec :
-
-```php
-[
-    'error' => true,
-    'ip' => $ip,
-    'message' => 'Échec de la géolocalisation après X tentatives',
-    'last_error' => $lastError,  // Détails de la dernière erreur
-    'fallback' => true,
-    'country' => null,
-    'continent' => null,
-    'is_vpn' => false,  // Par défaut, on considère que ce n'est pas un VPN
-    'asn' => null,
-    'isp' => null
-]
+```yaml
+geolocator:
+  providers:
+    # Configuration de base...
+    timeout: 3                 # Timeout en secondes pour les requêtes HTTP
+    retry_count: 2             # Nombre de tentatives avant de passer au fournisseur suivant
+    exclusion_time: 300        # Temps d'exclusion en secondes pour un fournisseur défaillant
+    check_interval: 60         # Intervalle de vérification en secondes pour les fournisseurs exclus
 ```
 
-## Logging et monitoring
+## Comportement en cas d'erreur
 
-Le bundle enregistre des logs détaillés sur les échecs de fournisseurs :
+### Erreurs gérées
 
-- **info** : Tentatives normales et succès
-- **warning** : Erreurs temporaires avec un fournisseur
-- **error** : Problèmes graves avec un fournisseur spécifique
-- **critical** : Tous les fournisseurs sont indisponibles
+Le bundle gère les types d'erreurs suivants :
 
-Vous pouvez suivre ces logs pour détecter des problèmes récurrents et ajuster votre configuration.
+- **Timeout** : Le fournisseur ne répond pas dans le délai imparti
+- **Erreur HTTP** : Le fournisseur renvoie un code d'erreur HTTP (4xx, 5xx)
+- **Réponse invalide** : Le fournisseur renvoie une réponse qui ne peut pas être interprétée
+- **Limite atteinte** : Le fournisseur indique que la limite de requêtes est atteinte
 
-## Bonnes pratiques
+### Processus de fallback
 
-1. **Configurer plusieurs fournisseurs** : Toujours avoir au moins 2-3 fournisseurs différents
-2. **Vérifier les quotas** : S'assurer que vos quotas API sont suffisants
-3. **Mettre en cache** : Activer la mise en cache pour réduire la dépendance aux fournisseurs
-4. **Surveiller les logs** : Mettre en place des alertes sur les logs critiques
+1. Le bundle tente d'utiliser le fournisseur principal avec jusqu'à `retry_count` tentatives
+2. Si toutes les tentatives échouent, le fournisseur est marqué comme indisponible pendant `exclusion_time` secondes
+3. Le bundle passe au premier fournisseur de secours et répète le processus
+4. Si tous les fournisseurs échouent, une exception est levée
 
-## Exemple d'utilisation dans le code
+## Cache et optimisation
 
-```php
-// Dans un controller ou service
-public function checkAccess(string $ip, GeolocatorService $geolocator)
-{
-    $geoData = $geolocator->locateIp($ip);
+Pour optimiser les performances et réduire le nombre de requêtes vers les fournisseurs :
 
-    // Vérifier si on a une erreur de géolocalisation
-    if (isset($geoData['error']) && $geoData['error'] === true) {
-        // Décider quoi faire en cas d'erreur :
-        // - Autoriser l'accès par défaut ?
-        // - Refuser l'accès par précaution ?
-        // - Utiliser des données de secours ?
+- Les résultats de géolocalisation sont mis en cache (PSR-6)
+- Les fournisseurs défaillants sont exclus temporairement
+- Le fallback n'est utilisé que si nécessaire
 
-        // Exemple : autoriser par défaut si configuration en ce sens
-        if ($this->parameterBag->get('geolocator.allow_on_error')) {
-            return true;
-        }
+## Exemples pratiques
 
-        return false;
-    }
+### Scénario 1 : Fournisseur principal temporairement indisponible
 
-    // Utiliser les données normalement
-    $country = $geoData['country'];
-    // ...
-}
+1. Le fournisseur principal (ipapi) est indisponible (timeout)
+2. Après `retry_count` tentatives, le bundle passe au premier fournisseur de secours (ipwhois)
+3. La géolocalisation est obtenue via ipwhois
+4. Le fournisseur ipapi est marqué comme indisponible pendant `exclusion_time` secondes
+5. Pour les requêtes suivantes pendant cette période, le bundle utilise directement ipwhois
+
+### Scénario 2 : Tous les fournisseurs sont indisponibles
+
+1. Tous les fournisseurs sont indisponibles (timeout ou erreur)
+2. Le bundle tente tous les fournisseurs configurés
+3. Si tous échouent, une exception est levée
+4. L'exception est gérée selon la configuration (mode simulate, comportement par défaut)
+
+## Surveillance et journalisation
+
+Le bundle journalise les événements suivants pour faciliter la surveillance :
+
+- Changement de fournisseur (fallback activé)
+- Exclusion d'un fournisseur
+- Réintégration d'un fournisseur
+- Échec de tous les fournisseurs
+
+## Configuration recommandée pour la production
+
+```yaml
+geolocator:
+  providers:
+    default: 'ipapi'           # Gratuit mais avec limite
+    list:
+      ipapi:
+        dsn: 'https://ipapi.co/{ip}/json/'
+      ipwhois:
+        dsn: 'https://ipwhois.app/json/{ip}'
+      ipqualityscore:         # Payant mais fiable
+        dsn: 'https://ipqualityscore.com/api/json/ip/{apikey}/{ip}'
+        apikey: '%env(IPQUALITYSCORE_APIKEY)%'
+    fallback: [ 'ipqualityscore', 'ipwhois' ]
+    timeout: 2
+    retry_count: 1
+    exclusion_time: 600
+    check_interval: 120
 ```
+
+Cette configuration utilise :
+- Un fournisseur gratuit comme principal (ipapi)
+- Un fournisseur payant mais fiable comme premier fallback (ipqualityscore)
+- Un autre fournisseur gratuit comme deuxième fallback (ipwhois)
+- Des timeouts courts et peu de tentatives pour éviter les latences
+- Une exclusion longue (10 minutes) pour éviter de solliciter les fournisseurs défaillants
