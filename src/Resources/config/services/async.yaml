@@ -18,8 +18,8 @@ services:
   # Handler pour le traitement des messages asynchrones
   GeolocatorBundle\MessageHandler\GeolocationMessageHandler:
     arguments:
-      - '@GeolocatorBundle\Service\GeolocatorService'
-      - '@logger'
+        $geolocator: '@geolocator.service'
+        $logger: '@monolog.logger.geolocator'
     tags:
       - { name: monolog.logger, channel: geolocator }
       # Le tag messenger.message_handler est automatiquement ajouté grâce à l'attribut #[AsMessageHandler]
