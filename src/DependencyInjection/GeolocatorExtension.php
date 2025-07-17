@@ -31,7 +31,24 @@ class GeolocatorExtension extends Extension
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
-        // Charger la configuration des services
+        // Définir les paramètres de configuration AVANT de charger les services
+        $container->setParameter('geolocator.config', $config);
+        $container->setParameter('geolocator.enabled', $config['enabled']);
+        $container->setParameter('geolocator.providers', $config['providers']);
+        $container->setParameter('geolocator.storage', $config['storage']);
+        $container->setParameter('geolocator.bans', $config['bans']);
+        $container->setParameter('geolocator.country_filters', $config['country_filters']);
+        $container->setParameter('geolocator.ip_filters', $config['ip_filters']);
+        $container->setParameter('geolocator.provider_fallback_mode', false); // Par défaut, désactivé
+        $container->setParameter('geolocator.vpn_detection', $config['vpn_detection']);
+        $container->setParameter('geolocator.crawler_filter', $config['crawler_filter']);
+        $container->setParameter('geolocator.redirect_on_ban', $config['redirect_on_ban']);
+        $container->setParameter('geolocator.simulate', $config['simulate']);
+
+        // Configuration des providers AVANT de charger les services
+        $this->configureProviders($container, $config);
+
+        // Charger la configuration des services APRÈS avoir défini les paramètres
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yaml');
 
@@ -45,7 +62,7 @@ class GeolocatorExtension extends Extension
             $loader->load('commands.yaml');
 
             // Charger la configuration de Messenger si disponible
-            if ($container->hasParameter('geolocator.messenger_available') && 
+            if ($container->hasParameter('geolocator.messenger_available') &&
                 $container->getParameter('geolocator.messenger_available') === true) {
                 $loader->load('messenger.yaml');
                 $loader->load('services/async.yaml');
@@ -61,20 +78,6 @@ class GeolocatorExtension extends Extension
                 throw $e;
             }
         }
-
-        // Définir les paramètres de configuration
-        $container->setParameter('geolocator.config', $config);
-        $container->setParameter('geolocator.enabled', $config['enabled']);
-        $container->setParameter('geolocator.providers', $config['providers']);
-        $container->setParameter('geolocator.storage', $config['storage']);
-        $container->setParameter('geolocator.bans', $config['bans']);
-        $container->setParameter('geolocator.country_filters', $config['country_filters']);
-        $container->setParameter('geolocator.ip_filters', $config['ip_filters']);
-        $container->setParameter('geolocator.provider_fallback_mode', false); // Par défaut, désactivé
-        $container->setParameter('geolocator.vpn_detection', $config['vpn_detection']);
-        $container->setParameter('geolocator.crawler_filter', $config['crawler_filter']);
-        $container->setParameter('geolocator.redirect_on_ban', $config['redirect_on_ban']);
-        $container->setParameter('geolocator.simulate', $config['simulate']);
 
         // Configuration conditionnelle
         if (!$config['enabled']) {
@@ -112,9 +115,6 @@ class GeolocatorExtension extends Extension
         } else {
             $container->setParameter('geolocator.async.enabled', false);
         }
-
-        // Configuration des providers
-        $this->configureProviders($container, $config);
     }
 
     /**
@@ -136,7 +136,7 @@ class GeolocatorExtension extends Extension
 
                     // Définir les paramètres spécifiques pour ce provider
                     $container->setParameter(
-                        "geolocator.providers.list.{$name}", 
+                        "geolocator.providers.list.{$name}",
                         $providerConfig
                     );
 
@@ -159,9 +159,9 @@ class GeolocatorExtension extends Extension
             // Enregistrer un avertissement dans les logs
             if ($container->has('logger')) {
                 $container->getDefinition('logger')
-                    ->addMethodCall('warning', [
-                        'Aucun fournisseur de géolocalisation externe n\'est activé. Utilisation du provider local de secours.'
-                    ]);
+                          ->addMethodCall('warning', [
+                              'Aucun fournisseur de géolocalisation externe n\'est activé. Utilisation du provider local de secours.'
+                          ]);
             }
 
             return;
@@ -177,13 +177,13 @@ class GeolocatorExtension extends Extension
                 // Enregistrer un avertissement dans les logs
                 if ($container->has('logger')) {
                     $container->getDefinition('logger')
-                        ->addMethodCall('warning', [
-                            sprintf(
-                                "Le provider par défaut '%s' n'est pas activé. Utilisation de '%s' à la place.", 
-                                $config['providers']['default'] ?? 'ipapi',
-                                $defaultProvider
-                            )
-                        ]);
+                              ->addMethodCall('warning', [
+                                  sprintf(
+                                      "Le provider par défaut '%s' n'est pas activé. Utilisation de '%s' à la place.",
+                                      $config['providers']['default'] ?? 'ipapi',
+                                      $defaultProvider
+                                  )
+                              ]);
                 }
             }
         }
