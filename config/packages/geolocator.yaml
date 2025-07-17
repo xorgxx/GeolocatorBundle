@@ -3,6 +3,13 @@ geolocator :
   event_bridge_service : null
   provider_fallback_mode : true  # Activé automatiquement si aucun provider n'est disponible
   
+  # Configuration du mode asynchrone
+  async :
+    enabled     : true
+    transport   : geolocator_async
+    retry_limit : 3
+    retry_delay : 1000
+    
   providers            :
     default  : 'ipapi'
     list     :
@@ -74,3 +81,4 @@ geolocator :
     enabled : true
   
   simulate             : false
+

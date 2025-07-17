@@ -1,0 +1,25 @@
+# Configuration des services asynchrones pour le GeolocatorBundle
+services:
+  # Service de gestion asynchrone
+  geolocator.async_manager:
+    class: GeolocatorBundle\Service\AsyncManager
+    arguments:
+      - '%geolocator.async.enabled%'
+      - '%geolocator.messenger_available%'
+      - '%geolocator.rabbit_available%'
+      - '%geolocator.redis_messenger_available%'
+      - '%geolocator.mercure_available%'
+      - '@?messenger.bus.default'
+      - '@logger'
+      - '%geolocator.async.transport%'
+    tags:
+      - { name: monolog.logger, channel: geolocator }
+
+  # Handler pour le traitement des messages asynchrones
+  GeolocatorBundle\MessageHandler\GeolocationMessageHandler:
+    arguments:
+      - '@GeolocatorBundle\Service\GeolocatorService'
+      - '@logger'
+    tags:
+      - { name: monolog.logger, channel: geolocator }
+      # Le tag messenger.message_handler est automatiquement ajouté grâce à l'attribut #[AsMessageHandler]

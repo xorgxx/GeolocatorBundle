@@ -48,6 +48,7 @@ class GeolocatorExtension extends Extension
             if ($container->hasParameter('geolocator.messenger_available') && 
                 $container->getParameter('geolocator.messenger_available') === true) {
                 $loader->load('messenger.yaml');
+                $loader->load('services/async.yaml');
             }
 
             // Charger la configuration du profiler (uniquement en environnement de dev)
