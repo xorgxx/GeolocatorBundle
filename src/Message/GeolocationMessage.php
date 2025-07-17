@@ -2,6 +2,9 @@
 
 namespace GeolocatorBundle\Message;
 
+/**
+ * Message pour la géolocalisation asynchrone
+ */
 class GeolocationMessage
 {
     private string $ip;

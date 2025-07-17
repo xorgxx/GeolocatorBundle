@@ -1,0 +1,17 @@
+services:
+    # Message Handler
+    geolocator.message_handler.geolocation:
+        class: GeolocatorBundle\Message\GeolocationMessageHandler
+        arguments:
+            $asyncGeolocator: '@geolocator.async_geolocator'
+        tags: ['messenger.message_handler']
+
+    # Configuration des messages asynchrones
+    geolocator.message.geolocation:
+        class: GeolocatorBundle\Message\GeolocationMessage
+
+    # Alias conditionnel pour le bus de messages
+    messenger.bus.default:
+        class: Symfony\Component\Messenger\MessageBusInterface
+        public: true
+        synthetic: true

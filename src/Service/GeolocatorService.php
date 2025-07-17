@@ -28,7 +28,7 @@ class GeolocatorService
     private IpResolver                $ipResolver;
     private ?AsyncManager             $asyncManager;
 
-    public function __construct(array $providers, StorageInterface $storage, BanManager $banManager, CountryFilter $countryFilter, VpnDetector $vpnDetector, CrawlerFilter $crawlerFilter, LoggerInterface $logger, array $config, IpResolver $ipResolver, ?EventDispatcherInterface $eventDispatcher = null, ?AsyncManager $asyncManager = null)
+    public function __construct(array $providers, StorageInterface $storage, BanManager $banManager, CountryFilter $countryFilter, IpFilter $ipFilter, VpnDetector $vpnDetector, CrawlerFilter $crawlerFilter, LoggerInterface $logger, array $config, IpResolver $ipResolver, ?EventDispatcherInterface $eventDispatcher = null, ?AsyncManager $asyncManager = null)
     {
         $this->providers = $providers;
         $this->storage = $storage;

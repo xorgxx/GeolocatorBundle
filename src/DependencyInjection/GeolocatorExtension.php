@@ -44,6 +44,12 @@ class GeolocatorExtension extends Extension
             // Charger la configuration des commandes
             $loader->load('commands.yaml');
 
+            // Charger la configuration de Messenger si disponible
+            if ($container->hasParameter('geolocator.messenger_available') && 
+                $container->getParameter('geolocator.messenger_available') === true) {
+                $loader->load('messenger.yaml');
+            }
+
             // Charger la configuration du profiler (uniquement en environnement de dev)
             if ($container->getParameter('kernel.environment') === 'dev') {
                 $loader->load('profiler.yaml');
@@ -92,6 +98,16 @@ class GeolocatorExtension extends Extension
         if (isset($config['async']) && $config['async']['enabled']) {
             $container->setParameter('geolocator.async.enabled', true);
             $container->setParameter('geolocator.async.transport', $config['async']['transport'] ?? 'async');
+
+            // Vérifier si le service de bus de messages existe
+            if (!$container->has('messenger.bus.default') && class_exists('Symfony\\Component\\Messenger\\MessageBusInterface')) {
+                // S'il n'existe pas mais que Messenger est disponible, créer un alias vers le service standard
+                if ($container->has('messenger.default_bus')) {
+                    $container->setAlias('messenger.bus.default', 'messenger.default_bus');
+                } elseif ($container->has('message_bus')) {
+                    $container->setAlias('messenger.bus.default', 'message_bus');
+                }
+            }
         } else {
             $container->setParameter('geolocator.async.enabled', false);
         }

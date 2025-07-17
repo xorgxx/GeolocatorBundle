@@ -13,6 +13,8 @@ services:
             $logger: '@monolog.logger.geolocator'
             $config: '%geolocator.config%'
             $ipResolver: '@geolocator.ip_resolver'
+            $eventDispatcher: '@?event_dispatcher'
+            $asyncManager: '@?geolocator.async_manager'
 
     # Providers de géolocalisation
     geolocator.provider.ipapi:
@@ -150,6 +152,14 @@ services:
             $logger: '@monolog.logger.geolocator'
         calls:
             - [setMessengerEnabled, ['%geolocator.async.enabled%']]
+
+    # Service de géolocalisation asynchrone
+    geolocator.async_geolocator:
+        class: GeolocatorBundle\Service\AsyncGeolocator
+        arguments:
+            $geolocator: '@geolocator.service'
+            $asyncManager: '@geolocator.async_manager'
+            $logger: '@monolog.logger.geolocator'
 
     # Contrôleur de base abstrait
     geolocator.controller.base:
