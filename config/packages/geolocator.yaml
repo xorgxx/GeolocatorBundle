@@ -6,10 +6,13 @@ geolocator :
     default  : 'ipapi'
     list     :
       ipapi          :
+        enabled : true
         dsn : 'https://ipapi.co/{ip}/json/'
       ipwhois        :
+        enabled : true
         dsn : 'https://ipwhois.app/json/{ip}'
       ipqualityscore :
+        enabled : true
         dsn    : 'https://ipqualityscore.com/api/json/ip/{apikey}/{ip}'
         apikey : '%env(IPQUALITYSCORE_APIKEY)%'
     fallback : [ 'ipwhois', 'ipapi' ]

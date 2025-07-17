@@ -97,7 +97,9 @@ class GeolocatorExtension extends Extension
         // Configurer chaque provider spécifiquement
         if (isset($config['providers']['list'])) {
             foreach ($config['providers']['list'] as $name => $providerConfig) {
-                if (isset($providerConfig['enabled']) && $providerConfig['enabled']) {
+                // Par défaut, les providers sont activés sauf indication contraire
+                $isEnabled = $providerConfig['enabled'] ?? true;
+                if ($isEnabled) {
                     $enabledProviders[] = $name;
 
                     // Définir les paramètres spécifiques pour ce provider
@@ -112,6 +114,13 @@ class GeolocatorExtension extends Extension
                     }
                 }
             }
+        }
+
+        // S'assurer qu'au moins un provider est activé
+        if (empty($enabledProviders)) {
+            throw new \InvalidArgumentException(
+                "Aucun fournisseur de géolocalisation n'est activé. Activez au moins un provider dans votre configuration."
+            );
         }
 
         // Définir le provider par défaut
