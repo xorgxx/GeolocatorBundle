@@ -27,6 +27,13 @@ class Configuration implements ConfigurationInterface
                     ->scalarPrototype()->end()
                     ->defaultValue(['X-Forwarded-For', 'X-Forwarded-Host', 'X-Forwarded-Proto'])
                 ->end()
+                ->arrayNode('admin')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('enabled')->defaultFalse()->end()
+                        ->scalarNode('route_prefix')->defaultValue('/admin/geolocator')->end()
+                    ->end()
+                ->end()
                 ->arrayNode('trusted_proxies')
                     ->prototype('scalar')->end()
                     ->defaultValue([])
@@ -112,6 +119,7 @@ class Configuration implements ConfigurationInterface
                 ->end()
 
                 ->arrayNode('bans')
+                    ->addDefaultsIfNotSet()
                     ->children()
                         ->integerNode('max_attempts')->defaultValue(10)->end()
                         ->integerNode('ttl')->defaultValue(3600)->end()
@@ -124,6 +132,7 @@ class Configuration implements ConfigurationInterface
                 ->end()
 
                 ->arrayNode('country_filters')
+                    ->addDefaultsIfNotSet()
                     ->children()
                         ->arrayNode('allow')
                             ->scalarPrototype()->end()
@@ -137,6 +146,7 @@ class Configuration implements ConfigurationInterface
                 ->end()
 
                 ->arrayNode('vpn_detection')
+                    ->addDefaultsIfNotSet()
                     ->children()
                         ->booleanNode('enabled')->defaultTrue()->end()
                         ->scalarNode('provider')->defaultValue('ipqualityscore')->end()
@@ -148,6 +158,7 @@ class Configuration implements ConfigurationInterface
                 ->end()
 
                 ->arrayNode('crawler_filter')
+                    ->addDefaultsIfNotSet()
                     ->children()
                         ->booleanNode('enabled')->defaultTrue()->end()
                         ->booleanNode('allow_known')->defaultFalse()->end()
@@ -159,6 +170,7 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode('log_level')->defaultValue('warning')->end()
 
                 ->arrayNode('profiler')
+                    ->addDefaultsIfNotSet()
                     ->children()
                         ->booleanNode('enabled')->defaultTrue()->end()
                     ->end()
