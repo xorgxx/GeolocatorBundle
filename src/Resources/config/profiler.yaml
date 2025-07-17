@@ -1,0 +1,18 @@
+services:
+    # Data collector pour le profiler Symfony
+    geolocator.data_collector:
+        class: GeolocatorBundle\DataCollector\GeolocatorDataCollector
+        arguments:
+            $geolocator: '@geolocator.service'
+            $enabled: '%geolocator.enabled%'
+        tags:
+            - { name: data_collector, template: '@Geolocator/Collector/geolocator.html.twig', id: 'geolocator' }
+
+    # Debug controller
+    geolocator.controller.debug:
+        class: GeolocatorBundle\Controller\DebugController
+        arguments:
+            $geolocator: '@geolocator.service'
+            $enabled: '%geolocator.enabled%'
+            $twig: '@twig'
+        tags: ['controller.service_arguments']

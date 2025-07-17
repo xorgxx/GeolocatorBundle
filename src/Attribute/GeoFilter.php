@@ -113,4 +113,3 @@ readonly class GeoFilter
         ];
     }
 }
-}

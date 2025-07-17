@@ -9,6 +9,9 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 class GeolocatorExtension extends Extension
 {
+    /**
+     * Charge la configuration du bundle et initialise les services.
+     */
     public function load(array $configs, ContainerBuilder $container): void
     {
         $configuration = new Configuration();
@@ -17,6 +20,26 @@ class GeolocatorExtension extends Extension
         // Charger la configuration des services
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yaml');
+
+        // Charger des configurations additionnelles
+        try {
+            if ($config['admin']['enabled'] ?? false) {
+                $loader->load('admin.yaml');
+            }
+
+            // Charger la configuration des commandes
+            $loader->load('commands.yaml');
+
+            // Charger la configuration du profiler (uniquement en environnement de dev)
+            if ($container->getParameter('kernel.environment') === 'dev') {
+                $loader->load('profiler.yaml');
+            }
+        } catch (\Exception $e) {
+            // Gestion silencieuse des fichiers manquants en production
+            if ($container->getParameter('kernel.environment') !== 'prod') {
+                throw $e;
+            }
+        }
 
         // Définir les paramètres de configuration
         $container->setParameter('geolocator.config', $config);
@@ -33,11 +56,79 @@ class GeolocatorExtension extends Extension
 
         // Configuration conditionnelle
         if (!$config['enabled']) {
+            // Désactiver les services tout en conservant les interfaces
+            $container->setParameter('geolocator.enabled', false);
             return;
         }
 
         // Configuration du stockage
         $storageType = $config['storage']['type'];
         $container->setAlias('geolocator.storage', 'geolocator.storage.' . $storageType);
+
+        // Configuration de Redis si nécessaire
+        if ($storageType === 'redis') {
+            if (empty($config['storage']['redis_dsn'])) {
+                throw new \InvalidArgumentException('Redis DSN must be provided when using Redis storage');
+            }
+            $container->setParameter('geolocator.storage.redis_dsn', $config['storage']['redis_dsn']);
+        }
+
+        // Configuration de la file de messages si nécessaire
+        if (isset($config['async']) && $config['async']['enabled']) {
+            $container->setParameter('geolocator.async.enabled', true);
+            $container->setParameter('geolocator.async.transport', $config['async']['transport'] ?? 'async');
+        } else {
+            $container->setParameter('geolocator.async.enabled', false);
+        }
+
+        // Configuration des providers
+        $this->configureProviders($container, $config);
+    }
+
+    /**
+     * Configure les providers de géolocalisation en fonction de la configuration.
+     */
+    private function configureProviders(ContainerBuilder $container, array $config): void
+    {
+        // Récupérer les fournisseurs activés
+        $enabledProviders = [];
+        $fallbackProviders = [];
+
+        // Configurer chaque provider spécifiquement
+        if (isset($config['providers']['list'])) {
+            foreach ($config['providers']['list'] as $name => $providerConfig) {
+                if (isset($providerConfig['enabled']) && $providerConfig['enabled']) {
+                    $enabledProviders[] = $name;
+
+                    // Définir les paramètres spécifiques pour ce provider
+                    $container->setParameter(
+                        "geolocator.providers.list.{$name}", 
+                        $providerConfig
+                    );
+
+                    // Ajouter aux providers de fallback si configuré
+                    if (isset($providerConfig['fallback']) && $providerConfig['fallback']) {
+                        $fallbackProviders[] = $name;
+                    }
+                }
+            }
+        }
+
+        // Définir le provider par défaut
+        $defaultProvider = $config['providers']['default'] ?? 'ipapi';
+        if (!in_array($defaultProvider, $enabledProviders)) {
+            if (empty($enabledProviders)) {
+                throw new \InvalidArgumentException(
+                    "Le provider par défaut '{$defaultProvider}' n'est pas activé et aucun autre provider n'est disponible."
+                );
+            }
+            // Prendre le premier provider disponible comme défaut
+            $defaultProvider = $enabledProviders[0];
+        }
+
+        // Définir les paramètres des providers
+        $container->setParameter('geolocator.providers.enabled', $enabledProviders);
+        $container->setParameter('geolocator.providers.default', $defaultProvider);
+        $container->setParameter('geolocator.providers.fallback', $fallbackProviders);
     }
 }

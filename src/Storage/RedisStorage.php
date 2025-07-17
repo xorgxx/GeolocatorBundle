@@ -2,7 +2,7 @@
 
 namespace GeolocatorBundle\Storage;
 
-use Predis\Client;○
+use Predis\Client;
 
 class RedisStorage implements StorageInterface
 {

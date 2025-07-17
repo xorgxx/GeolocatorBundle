@@ -1,0 +1,23 @@
+services:
+    # Controllers d'administration
+    geolocator.controller.admin:
+        class: GeolocatorBundle\Controller\AdminController
+        arguments:
+            $geolocator: '@geolocator.service'
+            $storage: '@geolocator.storage'
+            $banManager: '@geolocator.ban_manager'
+            $twig: '@twig'
+            $config: '%geolocator.config%'
+            $enabled: '%geolocator.enabled%'
+        tags: ['controller.service_arguments']
+
+    # Formulaires
+    geolocator.form.ban_ip:
+        class: GeolocatorBundle\Form\BanIpType
+        arguments: []
+        tags: ['form.type']
+
+    geolocator.form.config_type:
+        class: GeolocatorBundle\Form\ConfigType
+        arguments: []
+        tags: ['form.type']

@@ -1,0 +1,41 @@
+services:
+    # Commandes de gestion des bans
+    geolocator.command.ban_list:
+        class: GeolocatorBundle\Command\BanListCommand
+        arguments:
+            $storage: '@geolocator.storage'
+            $enabled: '%geolocator.enabled%'
+        tags: ['console.command']
+
+    geolocator.command.ban_add:
+        class: GeolocatorBundle\Command\BanAddCommand
+        arguments:
+            $banManager: '@geolocator.ban_manager'
+            $ipResolver: '@geolocator.ip_resolver'
+            $enabled: '%geolocator.enabled%'
+        tags: ['console.command']
+
+    geolocator.command.ban_remove:
+        class: GeolocatorBundle\Command\BanRemoveCommand
+        arguments:
+            $banManager: '@geolocator.ban_manager'
+            $ipResolver: '@geolocator.ip_resolver'
+            $enabled: '%geolocator.enabled%'
+        tags: ['console.command']
+
+    # Commande de vérification de configuration
+    geolocator.command.check_config:
+        class: GeolocatorBundle\Command\CheckConfigCommand
+        arguments:
+            $geolocator: '@geolocator.service'
+            $storage: '@geolocator.storage'
+            $config: '%geolocator.config%'
+        tags: ['console.command']
+
+    # Commande de test d'une IP
+    geolocator.command.test_ip:
+        class: GeolocatorBundle\Command\TestIpCommand
+        arguments:
+            $geolocator: '@geolocator.service'
+            $enabled: '%geolocator.enabled%'
+        tags: ['console.command']

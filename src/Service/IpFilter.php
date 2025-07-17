@@ -44,7 +44,7 @@ class IpFilter
             // Si une liste d'autorisation est définie et que l'IP n'y figure pas,
             // l'IP est bloquée par défaut (liste blanche)
             if ($config['allow_list_exclusive'] ?? false) {
-                $this->logger->info(sprintf('IP %s bloquée car ne figurant pas dans la liste d'autorisation exclusive', $ip));
+                $this->logger->info(sprintf('IP %s bloquée car ne figurant pas dans la liste d\'autorisation exclusive', $ip));
                 return false;
             }
         }
