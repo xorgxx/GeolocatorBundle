@@ -1,0 +1,116 @@
+{% extends '@WebProfiler/Profiler/layout.html.twig' %}
+
+{% block toolbar %}
+    {% if collector.enabled %}
+        {% set icon %}
+            {{ include('@Geolocator/Icon/globe.svg') }}
+            <span class="sf-toolbar-value">{{ collector.ip }}</span>
+        {% endset %}
+
+        {% set text %}
+            <div class="sf-toolbar-info-piece">
+                <b>IP</b>
+                <span>{{ collector.ip }}</span>
+            </div>
+            {% if collector.geoLocation %}
+                <div class="sf-toolbar-info-piece">
+                    <b>Pays</b>
+                    <span>{{ collector.geoLocation.country_code }} ({{ collector.geoLocation.country_name }})</span>
+                </div>
+                <div class="sf-toolbar-info-piece">
+                    <b>Ville</b>
+                    <span>{{ collector.geoLocation.city }}</span>
+                </div>
+                {% if collector.geoLocation.is_vpn is defined %}
+                    <div class="sf-toolbar-info-piece">
+                        <b>VPN</b>
+                        <span>{{ collector.geoLocation.is_vpn ? 'Oui' : 'Non' }}</span>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="sf-toolbar-info-piece">
+                    <b>Géolocalisation</b>
+                    <span>Non disponible</span>
+                </div>
+            {% endif %}
+            {% if collector.error %}
+                <div class="sf-toolbar-info-piece">
+                    <b>Erreur</b>
+                    <span class="sf-toolbar-status sf-toolbar-status-red">{{ collector.error }}</span>
+                </div>
+            {% endif %}
+        {% endset %}
+
+        {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { 'link': profiler_url }) }}
+    {% endif %}
+{% endblock %}
+
+{% block menu %}
+    <span class="label {{ not collector.enabled ? 'disabled' }}">
+        <span class="icon">{{ include('@Geolocator/Icon/globe.svg') }}</span>
+        <strong>Geolocator</strong>
+    </span>
+{% endblock %}
+
+{% block panel %}
+    <h2>Geolocator</h2>
+
+    {% if not collector.enabled %}
+        <div class="empty">
+            <p>Le bundle Geolocator n'est pas activé.</p>
+        </div>
+    {% elseif collector.error %}
+        <div class="empty">
+            <p>Une erreur s'est produite : {{ collector.error }}</p>
+        </div>
+    {% else %}
+        <div class="metrics">
+            <div class="metric">
+                <span class="value">{{ collector.ip }}</span>
+                <span class="label">IP</span>
+            </div>
+            {% if collector.geoLocation %}
+                <div class="metric">
+                    <span class="value">{{ collector.geoLocation.country_code }}</span>
+                    <span class="label">Pays</span>
+                </div>
+                {% if collector.geoLocation.city %}
+                    <div class="metric">
+                        <span class="value">{{ collector.geoLocation.city }}</span>
+                        <span class="label">Ville</span>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        {% if collector.geoLocation %}
+            <h3>Détails de géolocalisation</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Propriété</th>
+                        <th scope="col">Valeur</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for key, value in collector.geoLocation %}
+                        {% if value is not null and key != 'raw_data' %}
+                            <tr>
+                                <th>{{ key }}</th>
+                                <td>
+                                    {% if value is same as(true) %}
+                                        <span class="label status-error">Oui</span>
+                                    {% elseif value is same as(false) %}
+                                        <span class="label status-success">Non</span>
+                                    {% else %}
+                                        {{ value }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    {% endif %}
+{% endblock %}
