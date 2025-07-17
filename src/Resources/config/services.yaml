@@ -154,12 +154,12 @@ services:
             - [setMessengerEnabled, ['%geolocator.async.enabled%']]
 
     # Service de géolocalisation asynchrone
-    geolocator.async_geolocator:
-        class: GeolocatorBundle\Service\AsyncGeolocator
-        arguments:
-            $geolocator: '@geolocator.service'
-            $asyncManager: '@geolocator.async_manager'
-            $logger: '@monolog.logger.geolocator'
+#    geolocator.async_geolocator:
+#        class: GeolocatorBundle\Service\AsyncGeolocator
+#        arguments:
+#            $geolocator: '@geolocator.service'
+#            $asyncManager: '@geolocator.async_manager'
+#            $logger: '@monolog.logger.geolocator'
 
     # Contrôleur de base abstrait
     geolocator.controller.base:
