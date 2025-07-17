@@ -14,6 +14,20 @@ class GeolocatorExtension extends Extension
      */
     public function load(array $configs, ContainerBuilder $container): void
     {
+        // Initialiser les paramètres de disponibilité des services avant la compilation de la configuration
+        if (!$container->hasParameter('geolocator.messenger_available')) {
+            $container->setParameter('geolocator.messenger_available', class_exists('Symfony\\Component\\Messenger\\MessageBusInterface'));
+        }
+        if (!$container->hasParameter('geolocator.rabbit_available')) {
+            $container->setParameter('geolocator.rabbit_available', class_exists('Symfony\\Component\\Messenger\\Bridge\\Amqp\\Transport\\AmqpTransportFactory'));
+        }
+        if (!$container->hasParameter('geolocator.redis_messenger_available')) {
+            $container->setParameter('geolocator.redis_messenger_available', class_exists('Symfony\\Component\\Messenger\\Bridge\\Redis\\Transport\\RedisTransportFactory'));
+        }
+        if (!$container->hasParameter('geolocator.mercure_available')) {
+            $container->setParameter('geolocator.mercure_available', class_exists('Symfony\\Component\\Mercure\\HubInterface'));
+        }
+
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 

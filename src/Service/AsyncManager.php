@@ -40,6 +40,14 @@ class AsyncManager
     }
 
     /**
+     * Active ou désactive le Messenger
+     */
+    public function setMessengerEnabled(bool $enabled): void
+    {
+        $this->messengerEnabled = $enabled && $this->messageBus !== null;
+    }
+
+    /**
      * Envoie une tâche de géolocalisation en traitement asynchrone
      */
     public function dispatchGeolocationTask(string $ip): bool

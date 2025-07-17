@@ -138,6 +138,19 @@ services:
         class: Symfony\Component\HttpClient\HttpClient
         factory: ['Symfony\Component\HttpClient\HttpClient', 'create']
 
+    # Service de gestion asynchrone
+    geolocator.async_manager:
+        class: GeolocatorBundle\Service\AsyncManager
+        arguments:
+            $messengerEnabled: '%geolocator.async.enabled%'
+            $rabbitEnabled: false
+            $redisEnabled: false
+            $mercureEnabled: false
+            $messageBus: '@messenger.bus.default'
+            $logger: '@monolog.logger.geolocator'
+        calls:
+            - [setMessengerEnabled, ['%geolocator.async.enabled%']]
+
     # Contrôleur de base abstrait
     geolocator.controller.base:
         abstract: true
