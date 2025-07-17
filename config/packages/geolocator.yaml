@@ -1,6 +1,7 @@
 geolocator :
   enabled              : true
   event_bridge_service : null
+  provider_fallback_mode : true  # Activé automatiquement si aucun provider n'est disponible
   
   providers            :
     default  : 'ipapi'

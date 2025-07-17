@@ -45,6 +45,11 @@ class GeolocatorService
         $this->fallbackProviders = $config[ 'providers' ][ 'fallback' ] ?? [];
         $this->eventBridgeService = $config[ 'event_bridge_service' ] ?? null;
         $this->asyncManager = $asyncManager;
+
+        // Vérifier si nous sommes en mode fallback avec le provider local
+        if (isset($config['provider_fallback_mode']) && $config['provider_fallback_mode'] === true) {
+            $this->logger->info('GeolocatorService initialisé en mode de secours avec le provider local');
+        }
     }
 
     /**
@@ -184,6 +189,15 @@ class GeolocatorService
      */
     public function getGeoLocation(string $ip): GeoLocation
     {
+        // Vérifier si nous sommes en mode fallback avec le provider local
+        if (isset($this->config['provider_fallback_mode']) && $this->config['provider_fallback_mode'] === true) {
+            // En mode fallback, utiliser directement le provider local
+            if (isset($this->providers['local'])) {
+                $this->logger->info("Utilisation du provider local en mode de secours pour l'IP: {$ip}");
+                return $this->providers['local']->getGeoLocation($ip);
+            }
+        }
+
         // Essayer le provider par défaut
         if (isset($this->providers[ $this->defaultProvider ])) {
             try {
@@ -204,7 +218,13 @@ class GeolocatorService
             }
         }
 
-        throw new \RuntimeException('All providers failed');
+        // Si tous les providers ont échoué et que le provider local est disponible, l'utiliser en dernier recours
+        if (isset($this->providers['local'])) {
+            $this->logger->warning("Tous les providers externes ont échoué, utilisation du provider local pour l'IP: {$ip}");
+            return $this->providers['local']->getGeoLocation($ip);
+        }
+
+        throw new \RuntimeException('All providers failed and no local fallback available');
     }
 
     /**

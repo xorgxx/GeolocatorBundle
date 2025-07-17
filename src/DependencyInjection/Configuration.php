@@ -17,6 +17,7 @@ class Configuration implements ConfigurationInterface
             ->children()
                 ->booleanNode('enabled')->defaultTrue()->end()
                 ->scalarNode('event_bridge_service')->defaultNull()->end()
+                ->booleanNode('provider_fallback_mode')->defaultFalse()->info('Active le mode de secours avec provider local si aucun provider externe n\'est disponible')->end()
                         ->booleanNode('auto_detect_services')->defaultTrue()->end()
                         ->booleanNode('messenger_enabled')->defaultValue('%geolocator.messenger_available%')->end()
                         ->booleanNode('rabbit_enabled')->defaultValue('%geolocator.rabbit_available%')->end()

@@ -226,6 +226,22 @@ public function someAction(Request $request, GeolocatorService $geolocator)
 - Vérifiez que les DSN des fournisseurs sont corrects
 - Vérifiez que les clés API sont valides
 - Vérifiez les logs pour plus d'informations
+- Si aucun fournisseur n'est disponible, le bundle activera automatiquement un mode de secours avec un provider local
+
+### Mode de secours automatique
+
+Le GeolocatorBundle inclut un mécanisme de secours qui s'active automatiquement si aucun fournisseur externe n'est configuré ou disponible. Dans ce mode :
+
+- Un provider local est utilisé pour fournir des informations de base
+- Les IPs locales/privées sont détectées et assignées au pays "FR" par défaut
+- Un message d'avertissement est enregistré dans les logs
+
+Vous pouvez aussi activer manuellement ce mode :
+
+```yaml
+geolocator:
+  provider_fallback_mode: true
+```
 
 ### Performance lente
 

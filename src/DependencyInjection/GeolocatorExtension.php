@@ -49,6 +49,7 @@ class GeolocatorExtension extends Extension
         $container->setParameter('geolocator.bans', $config['bans']);
         $container->setParameter('geolocator.country_filters', $config['country_filters']);
         $container->setParameter('geolocator.ip_filters', $config['ip_filters']);
+        $container->setParameter('geolocator.provider_fallback_mode', false); // Par défaut, désactivé
         $container->setParameter('geolocator.vpn_detection', $config['vpn_detection']);
         $container->setParameter('geolocator.crawler_filter', $config['crawler_filter']);
         $container->setParameter('geolocator.redirect_on_ban', $config['redirect_on_ban']);
@@ -116,28 +117,50 @@ class GeolocatorExtension extends Extension
             }
         }
 
-        // S'assurer qu'au moins un provider est activé
+        // S'assurer qu'au moins un provider est disponible
         if (empty($enabledProviders)) {
-            throw new \InvalidArgumentException(
-                "Aucun fournisseur de géolocalisation n'est activé. Activez au moins un provider dans votre configuration."
-            );
+            // Activer automatiquement le provider interne en mode de secours
+            $container->setParameter('geolocator.provider_fallback_mode', true);
+            $container->setParameter('geolocator.providers.enabled', ['local']);
+            $container->setParameter('geolocator.providers.default', 'local');
+            $container->setParameter('geolocator.providers.fallback', []);
+
+            // Enregistrer un avertissement dans les logs
+            if ($container->has('logger')) {
+                $container->getDefinition('logger')
+                    ->addMethodCall('warning', [
+                        'Aucun fournisseur de géolocalisation externe n\'est activé. Utilisation du provider local de secours.'
+                    ]);
+            }
+
+            return;
         }
 
         // Définir le provider par défaut
         $defaultProvider = $config['providers']['default'] ?? 'ipapi';
         if (!in_array($defaultProvider, $enabledProviders)) {
-            if (empty($enabledProviders)) {
-                throw new \InvalidArgumentException(
-                    "Le provider par défaut '{$defaultProvider}' n'est pas activé et aucun autre provider n'est disponible."
-                );
+            // Si le provider par défaut n'est pas activé, prendre le premier disponible
+            if (!empty($enabledProviders)) {
+                $defaultProvider = $enabledProviders[0];
+
+                // Enregistrer un avertissement dans les logs
+                if ($container->has('logger')) {
+                    $container->getDefinition('logger')
+                        ->addMethodCall('warning', [
+                            sprintf(
+                                "Le provider par défaut '%s' n'est pas activé. Utilisation de '%s' à la place.", 
+                                $config['providers']['default'] ?? 'ipapi',
+                                $defaultProvider
+                            )
+                        ]);
+                }
             }
-            // Prendre le premier provider disponible comme défaut
-            $defaultProvider = $enabledProviders[0];
         }
 
         // Définir les paramètres des providers
         $container->setParameter('geolocator.providers.enabled', $enabledProviders);
         $container->setParameter('geolocator.providers.default', $defaultProvider);
         $container->setParameter('geolocator.providers.fallback', $fallbackProviders);
+        $container->setParameter('geolocator.provider_fallback_mode', false); // Mode normal par défaut
     }
 }
