@@ -11,9 +11,9 @@ class JsonStorage implements StorageInterface
     ];
     private bool $loaded = false;
 
-    public function __construct(string $filePath)
+    public function __construct( $filePath)
     {
-        $this->filePath = $filePath;
+        $this->filePath = $filePath["file"] ?? $filePath;
     }
 
     /**

@@ -11,19 +11,30 @@ geolocator:
     retry_delay : 1000
 
   providers :
-      enabled: [ 'ipapi', 'ipwhois', 'ipqualityscore' ]  # liste des providers actifs
+#      enabled: [ 'ipapi', 'ipwhois', 'ipqualityscore' ]  # liste des providers actifs
       default: 'ipapi'                                 # provider par défaut
-      list:
-          ipapi:
-              enabled : true
-              dsn     : 'https://ipapi.co/{ip}/json/'
+      list :
+          ipapi          :
+              name           : ipapi
+              enabled        : true
+              dsn            : 'https://ipapi.co/{ip}/json/'
+              timeout        : 5
+              retry_attempts : 2
           ipwhois        :
-              enabled : true
-              dsn     : 'https://ipwhois.app/json/{ip}'
+              name           : ipwhois
+              enabled        : true
+              dsn            : 'https://ipwhois.app/json/{ip}'
+              timeout        : 5
+              retry_attempts : 2
           ipqualityscore :
-              enabled : true
-              dsn     : 'https://ipqualityscore.com/api/json/ip/{apikey}/{ip}'
-              apikey  : '%env(IPQUALITYSCORE_APIKEY)%'
+              name           : ipqualityscore
+              enabled        : true
+              dsn            : 'https://ipqualityscore.com/api/json/ip/{apikey}/{ip}'
+              apikey         : '%env(IPQUALITYSCORE_APIKEY)%'
+              timeout        : 5
+              retry_attempts : 2
+      
+      
       fallback : [ 'ipwhois', 'ipapi' ]
 
   storage              :

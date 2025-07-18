@@ -17,29 +17,29 @@ services:
             $asyncManager: '@?geolocator.async_manager'
 
     # Providers de géolocalisation
-#    geolocator.provider.ipapi:
-#        class: GeolocatorBundle\Provider\IpapiProvider
-#        arguments:
-#            $httpClient: '@http_client'
-#            $config: '%geolocator.providers.list.ipapi%'
-#        tags:
-#            - { name: 'geolocator.provider', alias: 'ipapi' }
+    geolocator.provider.ipapi:
+        class: GeolocatorBundle\Provider\IpapiProvider
+        arguments:
+            $httpClient: '@http_client'
+            $config: '%geolocator.providers.list.ipapi%'
+        tags:
+            - { name: 'geolocator.provider', alias: 'ipapi' }
 
-#    geolocator.provider.ipwhois:
-#        class: GeolocatorBundle\Provider\IpwhoisProvider
-#        arguments:
-#            $httpClient: '@http_client'
-#            $config: '%geolocator.config_provider.ipwhois%'
-#        tags:
-#            - { name: 'geolocator.provider', alias: 'ipwhois' }
+    geolocator.provider.ipwhois:
+        class: GeolocatorBundle\Provider\IpwhoisProvider
+        arguments:
+            $httpClient: '@http_client'
+            $config: '%geolocator.providers.list.ipwhois%'
+        tags:
+            - { name: 'geolocator.provider', alias: 'ipwhois' }
 
-#    geolocator.provider.ipqualityscore:
-#        class: GeolocatorBundle\Provider\IpqualityscoreProvider
-#        arguments:
-#            $httpClient: '@http_client'
-#            $config: '%geolocator.config_provider.ipqualityscore%'
-#        tags:
-#            - { name: 'geolocator.provider', alias: 'ipqualityscore' }
+    geolocator.provider.ipqualityscore:
+        class: GeolocatorBundle\Provider\IpqualityscoreProvider
+        arguments:
+            $httpClient: '@http_client'
+            $config: '%geolocator.providers.list.ipqualityscore%'
+        tags:
+            - { name: 'geolocator.provider', alias: 'ipqualityscore' }
 
     # Stockage
     geolocator.storage.memory:
