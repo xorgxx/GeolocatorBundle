@@ -1,45 +1,46 @@
-geolocator :
+geolocator:
   enabled              : true
   event_bridge_service : null
   provider_fallback_mode : true  # Activé automatiquement si aucun provider n'est disponible
-  
+
   # Configuration du mode asynchrone
   async :
     enabled     : true
     transport   : geolocator_async
     retry_limit : 3
     retry_delay : 1000
-    
-  providers            :
-    default  : 'ipapi'
-    list     :
-      ipapi          :
-        enabled : true
-        dsn : 'https://ipapi.co/{ip}/json/'
-      ipwhois        :
-        enabled : true
-        dsn : 'https://ipwhois.app/json/{ip}'
-      ipqualityscore :
-        enabled : true
-        dsn    : 'https://ipqualityscore.com/api/json/ip/{apikey}/{ip}'
-        apikey : '%env(IPQUALITYSCORE_APIKEY)%'
-    fallback : [ 'ipwhois', 'ipapi' ]
-  
+
+  providers :
+      enabled: [ 'ipapi', 'ipwhois', 'ipqualityscore' ]  # liste des providers actifs
+      default: 'ipapi'                                 # provider par défaut
+      list:
+          ipapi:
+              enabled : true
+              dsn     : 'https://ipapi.co/{ip}/json/'
+          ipwhois        :
+              enabled : true
+              dsn     : 'https://ipwhois.app/json/{ip}'
+          ipqualityscore :
+              enabled : true
+              dsn     : 'https://ipqualityscore.com/api/json/ip/{apikey}/{ip}'
+              apikey  : '%env(IPQUALITYSCORE_APIKEY)%'
+      fallback : [ 'ipwhois', 'ipapi' ]
+
   storage              :
     type      : 'json'
     file      : '%kernel.project_dir%/var/bans.json'
     redis_dsn : 'redis://localhost'
-  
+
   bans                 :
     max_attempts        : 10
     ttl                 : 3600
     ban_duration        : '1 hour'
     permanent_countries : [ 'RU', 'CN' ]
-  
+
   country_filters      :
     allow : [ 'FR', 'BE' ]
     block : [ 'RU', 'CN' ]
-    
+
   ip_filters :
     enabled              : true
     allow_list_exclusive : false
@@ -48,37 +49,37 @@ geolocator :
       - '192.168.1.0/24'
     block_list           :
       - '1.2.3.4'
-  
-  
+
+
   # Configuration pour la détection d'IP sécurisée
   ip_filter_flags      :
     - 'X-Forwarded-For'
     - 'X-Forwarded-Host'
     - 'X-Forwarded-Proto'
-  
+
   # Liste des proxies de confiance (IP ou CIDR)
   trusted_proxies      :
     - '127.0.0.1'          # Localhost
     - '10.0.0.0/8'          # Réseau privé
     - '172.16.0.0/12'       # Réseau privé
     - '192.168.0.0/16'      # Réseau privé
-  
+
   vpn_detection        :
     enabled     : true
     provider    : 'ipqualityscore'
     allowed_ips : [ ]
-  
+
   crawler_filter       :
     enabled     : true
     allow_known : false
-  
+
   redirect_on_ban      : '/banned'
-  
+
   log_channel          : 'geolocator'
   log_level            : 'warning'
-  
+
   profiler             :
     enabled : true
-  
+
   simulate             : false
 

@@ -38,15 +38,15 @@ class GeolocatorDataCollector extends DataCollector
             'is_banned' => $banInfo !== null,
             'ban_info' => $banInfo,
             'is_vpn' => $geoLocation ? $geoLocation->isVpn() : false,
-            'is_crawler' => $request->headers->has('User-Agent') && $this->geolocator->isCrawler($request),
+            'is_crawler' => $request->headers->has('User-Agent') && $this->geolocator->getCrawlerFilter($request),
             'provider_used' => $geoLocation ? $geoLocation->getProvider() : null,
             'simulation_mode' => $this->geolocator->isSimulationMode(),
             'async_available' => $this->geolocator->isAsyncAvailable(),
             'ip_filter' => [
-                'in_allow_list' => $this->geolocator->ipFilter->isInAllowList($ip),
-                'in_block_list' => $this->geolocator->ipFilter->isInBlockList($ip),
+                'in_allow_list' => $this->geolocator->getIpFilter()->isInAllowList($ip),
+                'in_block_list' => $this->geolocator->getIpFilter()->isInBlockList($ip),
                 'is_allowed' => $this->geolocator->isIpAllowed($ip),
-                'config' => $this->geolocator->ipFilter->getConfig(),
+                'config' => $this->geolocator->getIpFilter()->getConfig(),
             ],
         ];
     }

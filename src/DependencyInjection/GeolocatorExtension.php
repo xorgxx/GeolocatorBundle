@@ -14,6 +14,13 @@ class GeolocatorExtension extends Extension
      */
     public function load(array $configs, ContainerBuilder $container): void
     {
+        // Configurer le namespace de template Twig pour le bundle
+        $container->prependExtensionConfig('twig', [
+            'paths' => [
+                __DIR__ . '/../Resources/views' => 'Geolocator'
+            ]
+        ]);
+
         // Initialiser les paramètres de disponibilité des services avant la compilation de la configuration
         if (!$container->hasParameter('geolocator.messenger_available')) {
             $container->setParameter('geolocator.messenger_available', class_exists('Symfony\\Component\\Messenger\\MessageBusInterface'));
@@ -88,6 +95,13 @@ class GeolocatorExtension extends Extension
 
         // Configuration du stockage
         $storageType = $config['storage']['type'];
+        if ($storageType === 'json') {
+            if (empty($config['storage']['file'])) {
+                throw new \InvalidArgumentException('File path must be provided when using JSON storage');
+            }
+            $container->setParameter('geolocator.storage', $config['storage']['file']);
+        }
+
         $container->setAlias('geolocator.storage', 'geolocator.storage.' . $storageType);
 
         // Configuration de Redis si nécessaire

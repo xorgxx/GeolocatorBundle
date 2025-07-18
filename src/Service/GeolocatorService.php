@@ -52,6 +52,13 @@ class GeolocatorService
         }
     }
 
+    public function getBanManager(): BanManager
+    {
+        return $this->banManager;
+    }
+
+
+
     /**
      * Traite une requête HTTP et vérifie si elle doit être bloquée.
      */
@@ -85,7 +92,7 @@ class GeolocatorService
 
                 if ($detectionResult['isCrawler']) {
                     $allowKnown = $this->config['crawler_filter']['allow_known'] ?? false;
-                    $shouldBlock = $detectionResult['isKnown'] 
+                    $shouldBlock = $detectionResult['isKnown']
                         ? !$allowKnown
                         : true; // Par défaut, bloquer les crawlers non connus
 
@@ -146,6 +153,17 @@ class GeolocatorService
     {
         return $this->crawlerFilter;
     }
+
+    public function isSimulationMode()
+    {
+        return $this->config['simulate'] ?? false;
+    }
+
+    public function getIpFilter(): IpFilter
+    {
+        return $this->ipFilter;
+    }
+
 
     /**
      * Récupère les informations de géolocalisation à partir d'une requête HTTP.
