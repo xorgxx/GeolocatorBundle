@@ -51,6 +51,8 @@ class GeolocatorExtension extends Extension
         $container->setParameter('geolocator.crawler_filter', $config['crawler_filter']);
         $container->setParameter('geolocator.redirect_on_ban', $config['redirect_on_ban']);
         $container->setParameter('geolocator.simulate', $config['simulate']);
+        $container->setParameter('geolocator.profiler.enabled', $config['profiler']['enabled']);
+
 
         // Configuration des providers AVANT de charger les services
         $this->configureProviders($container, $config);

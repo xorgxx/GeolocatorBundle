@@ -4,33 +4,30 @@
     {% if collector.enabled %}
         {% set icon %}
             {{ include('@Geolocator/Icon/globe.svg') }}
-            <span class="sf-toolbar-value">{{ collector.ip }}</span>
+            <span class="sf-toolbar-value">{{ collector.ip|default('N/A') }}</span>
         {% endset %}
 
         {% set text %}
             <div class="sf-toolbar-info-piece">
                 <b>IP</b>
-                <span>{{ collector.ip }}</span>
+                <span>{{ collector.ip|default('N/A') }}</span>
             </div>
-            {% if collector.geoLocation %}
+            {% if collector.country %}
                 <div class="sf-toolbar-info-piece">
                     <b>Pays</b>
-                    <span>{{ collector.geoLocation.country_code }} ({{ collector.geoLocation.country_name }})</span>
+                    <span>{{ collector.country }} ({{ collector.countryName|default('N/A') }})</span>
                 </div>
+            {% endif %}
+            {% if collector.city %}
                 <div class="sf-toolbar-info-piece">
                     <b>Ville</b>
-                    <span>{{ collector.geoLocation.city }}</span>
+                    <span>{{ collector.city }}</span>
                 </div>
-                {% if collector.geoLocation.is_vpn is defined %}
-                    <div class="sf-toolbar-info-piece">
-                        <b>VPN</b>
-                        <span>{{ collector.geoLocation.is_vpn ? 'Oui' : 'Non' }}</span>
-                    </div>
-                {% endif %}
-            {% else %}
+            {% endif %}
+            {% if collector.isVpn is defined %}
                 <div class="sf-toolbar-info-piece">
-                    <b>Géolocalisation</b>
-                    <span>Non disponible</span>
+                    <b>VPN</b>
+                    <span>{{ collector.isVpn ? 'Oui' : 'Non' }}</span>
                 </div>
             {% endif %}
             {% if collector.error %}
@@ -66,51 +63,91 @@
     {% else %}
         <div class="metrics">
             <div class="metric">
-                <span class="value">{{ collector.ip }}</span>
+                <span class="value">{{ collector.ip|default('N/A') }}</span>
                 <span class="label">IP</span>
             </div>
-            {% if collector.geoLocation %}
+            {% if collector.country %}
                 <div class="metric">
-                    <span class="value">{{ collector.geoLocation.country_code }}</span>
+                    <span class="value">{{ collector.country }}</span>
                     <span class="label">Pays</span>
                 </div>
-                {% if collector.geoLocation.city %}
-                    <div class="metric">
-                        <span class="value">{{ collector.geoLocation.city }}</span>
-                        <span class="label">Ville</span>
-                    </div>
-                {% endif %}
+            {% endif %}
+            {% if collector.city %}
+                <div class="metric">
+                    <span class="value">{{ collector.city }}</span>
+                    <span class="label">Ville</span>
+                </div>
             {% endif %}
         </div>
 
-        {% if collector.geoLocation %}
-            <h3>Détails de géolocalisation</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th scope="col">Propriété</th>
-                        <th scope="col">Valeur</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for key, value in collector.geoLocation %}
-                        {% if value is not null and key != 'raw_data' %}
-                            <tr>
-                                <th>{{ key }}</th>
-                                <td>
-                                    {% if value is same as(true) %}
-                                        <span class="label status-error">Oui</span>
-                                    {% elseif value is same as(false) %}
-                                        <span class="label status-success">Non</span>
-                                    {% else %}
-                                        {{ value }}
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endif %}
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% endif %}
+        <h3>Détails de géolocalisation</h3>
+        <table>
+            <thead>
+            <tr>
+                <th scope="col">Propriété</th>
+                <th scope="col">Valeur</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <th>IP</th>
+                <td>{{ collector.ip|default('N/A') }}</td>
+            </tr>
+            {% if collector.country %}
+                <tr>
+                    <th>Code pays</th>
+                    <td>{{ collector.country }}</td>
+                </tr>
+            {% endif %}
+            {% if collector.countryName %}
+                <tr>
+                    <th>Nom du pays</th>
+                    <td>{{ collector.countryName }}</td>
+                </tr>
+            {% endif %}
+            {% if collector.city %}
+                <tr>
+                    <th>Ville</th>
+                    <td>{{ collector.city }}</td>
+                </tr>
+            {% endif %}
+            {% if collector.providerUsed %}
+                <tr>
+                    <th>Fournisseur</th>
+                    <td>{{ collector.providerUsed }}</td>
+                </tr>
+            {% endif %}
+            <tr>
+                <th>VPN détecté</th>
+                <td>
+                    {% if collector.isVpn %}
+                        <span class="label status-error">Oui</span>
+                    {% else %}
+                        <span class="label status-success">Non</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Crawler détecté</th>
+                <td>
+                    {% if collector.isCrawler %}
+                        <span class="label status-error">Oui</span>
+                    {% else %}
+                        <span class="label status-success">Non</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>IP bannie</th>
+                <td>
+                    {% if collector.isBanned %}
+                        <span class="label status-error">Oui</span>
+                    {% else %}
+                        <span class="label status-success">Non</span>
+                    {% endif %}
+                </td>
+            </tr>
+            </tbody>
+        </table>
     {% endif %}
 {% endblock %}

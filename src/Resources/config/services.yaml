@@ -17,13 +17,13 @@ services:
             $asyncManager: '@?geolocator.async_manager'
 
     # Providers de géolocalisation
-    geolocator.provider.ipapi:
-        class: GeolocatorBundle\Provider\IpapiProvider
-        arguments:
-            $httpClient: '@http_client'
-            $config: '%geolocator.providers.list.ipapi%'
-        tags:
-            - { name: 'geolocator.provider', alias: 'ipapi' }
+#    geolocator.provider.ipapi:
+#        class: GeolocatorBundle\Provider\IpapiProvider
+#        arguments:
+#            $httpClient: '@http_client'
+#            $config: '%geolocator.providers.list.ipapi%'
+#        tags:
+#            - { name: 'geolocator.provider', alias: 'ipapi' }
 
 #    geolocator.provider.ipwhois:
 #        class: GeolocatorBundle\Provider\IpwhoisProvider
@@ -118,7 +118,8 @@ services:
             $geolocator: '@geolocator.service'
             $enabled: '%geolocator.profiler.enabled%'
         tags:
-            - { name: data_collector, template: '@!GeolocatorBundle/Resources/views/Collector/geolocator.html.twig', id: 'geolocator' }
+            - { name : data_collector, template : '@Geolocator/Collector/geolocator.html.twig' }
+#            - { name: data_collector, template: '@!GeolocatorBundle/Resources/views/Collector/geolocator.html.twig', id: 'geolocator' }
 
     # Monolog handler
     monolog.logger.geolocator:
