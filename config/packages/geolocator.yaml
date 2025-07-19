@@ -94,3 +94,12 @@ geolocator:
 
   simulate             : false
 
+  # Routes à ignorer (ne seront pas vérifiées par le géolocateur)
+  ignored_routes       :
+    - '_wdt'
+    - '_profiler'
+    - '_profiler_*'    # Utilisation du joker pour toutes les routes du profiler
+    - 'symfony_*'      # Routes internes de Symfony
+    - 'api_doc*'       # Documentation API (si vous utilisez NelmioApiDocBundle)
+    - 'fos_js_*'       # Routes FOSJsRoutingBundle
+

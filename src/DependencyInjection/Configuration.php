@@ -207,6 +207,10 @@ class Configuration implements ConfigurationInterface
                 ->end()
 
                 ->booleanNode('simulate')->defaultFalse()->end()
+                    ->arrayNode('ignored_routes')
+                        ->prototype('scalar')->end()
+                        ->defaultValue(['_wdt', '_profiler*', 'symfony_*'])
+                    ->end()
 
                 ->arrayNode('cache')
                     ->addDefaultsIfNotSet()

@@ -114,6 +114,7 @@ services:
             $redirectUrl: '%geolocator.redirect_on_ban%'
             $enabled: '%geolocator.enabled%'
             $simulate: '%geolocator.simulate%'
+            $ignoredRoutes: '%geolocator.ignored_routes%'
         tags:
             - { name: kernel.event_listener, event: kernel.request, priority: 30 }
 

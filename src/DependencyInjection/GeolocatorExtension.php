@@ -51,6 +51,7 @@ class GeolocatorExtension extends Extension
         $container->setParameter('geolocator.crawler_filter', $config['crawler_filter']);
         $container->setParameter('geolocator.redirect_on_ban', $config['redirect_on_ban']);
         $container->setParameter('geolocator.simulate', $config['simulate']);
+        $container->setParameter('geolocator.ignored_routes', $config['ignored_routes']);
         $container->setParameter('geolocator.profiler.enabled', $config['profiler']['enabled']);
 
 
