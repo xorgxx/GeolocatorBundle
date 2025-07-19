@@ -103,7 +103,7 @@ class GeolocatorDataCollector extends DataCollector
 
     public static function getTemplate(): ?string
     {
-        return '@Geolocator/Collector/geolocator.html.twig';
+        return '@Geolocator/data_collector/template.html.twig';
     }
 
     public function getMethod(): string
