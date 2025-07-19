@@ -1,0 +1,4 @@
+geolocator:
+    profiler:
+        enabled: true
+    simulate: false

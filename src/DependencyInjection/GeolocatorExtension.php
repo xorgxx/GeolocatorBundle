@@ -78,10 +78,13 @@ class GeolocatorExtension extends Extension
                 $loader->load('services/async.yaml');
             }
 
-            // Charger la configuration du profiler (uniquement en environnement de dev)
-            if ($container->getParameter('kernel.environment') === 'dev') {
+            // Charger la configuration du profiler (uniquement en environnement de dev ou test)
+            if (in_array($container->getParameter('kernel.environment'), ['dev', 'test'])) {
                 $loader->load('profiler.yaml');
-//                $container->getDefinition('geolocator.data_collector')->setPublic(true);
+                // Rendre le service public
+                if ($container->hasDefinition('data_collector.geolocator')) {
+                    $container->getDefinition('data_collector.geolocator')->setPublic(true);
+                }
             }
         } catch (\Exception $e) {
             // Gestion silencieuse des fichiers manquants en production

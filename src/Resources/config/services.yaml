@@ -126,14 +126,7 @@ services:
         tags:
             - { name: kernel.event_subscriber }
 
-    # Data collectors pour le profiler
-    geolocator.data_collector:
-        class: GeolocatorBundle\DataCollector\GeolocatorDataCollector
-        arguments:
-            $geolocator: '@geolocator.service'
-            $enabled: '%geolocator.profiler.enabled%'
-        tags:
-            - { name: data_collector, template: '@Geolocator/Collector/geolocator.html.twig', id: 'geolocator' }
+    # Note: Le data collector est défini dans profiler.yaml
 
     # Monolog handler
     monolog.logger.geolocator:

@@ -20,6 +20,10 @@ class GeolocatorDataCollector extends DataCollector
 
     public function collect(Request $request, Response $response, \Throwable $exception = null): void
     {
+        // Log pour débogage
+        if (method_exists($this->geolocator, 'getLogger')) {
+            $this->geolocator->getLogger()->warning('GeolocatorDataCollector::collect() appelé - enabled: ' . ($this->enabled ? 'true' : 'false'));
+        }
         if (!$this->enabled) {
             $this->data = [
                 'enabled' => false,
