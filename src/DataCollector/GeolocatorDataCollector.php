@@ -94,9 +94,24 @@ class GeolocatorDataCollector extends DataCollector
 
     public function getName(): string
     {
-        return 'geolocator';
+        return 'data_collector';
     }
 
+    public static function getTemplate(): ?string
+    {
+        return '@Geolocator/Collector/geolocator.html.twig';
+    }
+
+    public function getMethod(): string
+    {
+        return $this->data['method'];
+    }
+
+    public function getAcceptableContentTypes(): array
+    {
+        return $this->data['acceptable_content_types'];
+    }
+    
     public function reset(): void
     {
         $this->data = [];

@@ -4,9 +4,11 @@ services:
         class: GeolocatorBundle\DataCollector\GeolocatorDataCollector
         arguments:
             $geolocator: '@geolocator.service'
-#            $enabled: '%geolocator.enabled%'
+            $enabled: '%geolocator.enabled%'
         tags:
-                - { name: data_collector, template: '@Geolocator/Collector/geolocator.html.twig' }
+            - { name: data_collector, template: '@Geolocator/Collector/geolocator.html.twig', id: "@Geolocator/DataCollector/GeolocatorDataCollector" }
+
+        public: true
 
     # Debug controller
     geolocator.controller.debug:

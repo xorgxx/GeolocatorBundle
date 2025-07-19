@@ -15,6 +15,11 @@ services:
             $ipResolver: '@geolocator.ip_resolver'
             $eventDispatcher: '@?event_dispatcher'
             $asyncManager: '@?geolocator.async_manager'
+#        calls:
+#            - ['setContainer', ['@service_container']]
+        public: true
+
+#    GeolocatorBundle\Service\GeolocatorService: '@geolocator.service'
 
     # Providers de géolocalisation
     geolocator.provider.ipapi:
@@ -40,6 +45,14 @@ services:
             $config: '%geolocator.providers.list.ipqualityscore%'
         tags:
             - { name: 'geolocator.provider', alias: 'ipqualityscore' }
+            
+    geolocator.provider.local:
+        class: GeolocatorBundle\Provider\LocalProvider
+        arguments:
+            $httpClient: '@http_client'
+            $config: { }
+        tags:
+            - { name: 'geolocator.provider', alias: 'local' }
 
     # Stockage
     geolocator.storage.memory:

@@ -3,6 +3,9 @@
 namespace GeolocatorBundle\Provider;
 
 use GeolocatorBundle\Model\GeoLocation;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
  * Provider local qui fournit des informations de base sans API externe.
@@ -10,11 +13,20 @@ use GeolocatorBundle\Model\GeoLocation;
  */
 class LocalProvider extends AbstractProvider
 {
+    private ?LoggerInterface $logger;
+
+    public function __construct(HttpClientInterface $httpClient, array $config = [], LoggerInterface $logger = null)
+    {
+        parent::__construct($httpClient, $config);
+        $this->logger = $logger ?? new NullLogger();
+    }
     /**
      * {@inheritdoc}
      */
     public function getGeoLocation(string $ip): GeoLocation
     {
+        $this->logger->debug("LocalProvider: Géolocalisation de l'IP {$ip}");
+
         // Information de base sans API externe
         $data = [
             'ip' => $ip,
@@ -32,6 +44,7 @@ class LocalProvider extends AbstractProvider
         if ($this->isLocalIp($ip)) {
             $data['country_code'] = 'FR';
             $data['country_name'] = 'France';
+            $this->logger->info("LocalProvider: IP locale détectée {$ip}, assignée à la France");
         }
 
         return new GeoLocation($ip, $data);
