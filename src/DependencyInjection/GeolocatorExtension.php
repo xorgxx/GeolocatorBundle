@@ -81,10 +81,6 @@ class GeolocatorExtension extends Extension
             // Charger la configuration du profiler (uniquement en environnement de dev ou test)
             if (in_array($container->getParameter('kernel.environment'), ['dev', 'test'])) {
                 $loader->load('profiler.yaml');
-                // Rendre le service public
-                if ($container->hasDefinition('data_collector.geolocator')) {
-                    $container->getDefinition('data_collector.geolocator')->setPublic(true);
-                }
             }
         } catch (\Exception $e) {
             // Gestion silencieuse des fichiers manquants en production

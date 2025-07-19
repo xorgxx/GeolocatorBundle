@@ -1,0 +1,4 @@
+# Configuration debug
+debug:
+    # Activer le mode debug
+    enabled: true
