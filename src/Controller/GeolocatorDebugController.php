@@ -6,7 +6,7 @@ use GeolocatorBundle\Service\GeolocatorService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * Contrôleur de diagnostic pour le bundle Geolocator.
@@ -32,9 +32,8 @@ class GeolocatorDebugController extends AbstractController
 
     /**
      * Page de diagnostic pour le bundle Geolocator.
-     * 
-     * @Route("/__geo/debug", name="geolocator_debug")
      */
+    #[Route('/__geo/debug', name: 'geolocator_debug')]
     public function debug(Request $request): Response
     {
         // Vérifier si nous sommes en environnement de développement

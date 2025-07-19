@@ -1,3 +1,3 @@
 geolocator:
     resource: '@GeolocatorBundle/Controller/'
-    type: annotation
+    type: attribute

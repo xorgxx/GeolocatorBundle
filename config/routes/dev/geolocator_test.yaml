@@ -1,0 +1,4 @@
+geolocator_profiler_test:
+    path: /__geo/profiler-test
+    controller: GeolocatorBundle\Controller\ProfilerTestController::index
+    methods: [GET]

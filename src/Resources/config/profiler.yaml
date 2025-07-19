@@ -14,11 +14,16 @@ services:
         alias: data_collector.geolocator
 
     # Debug controller
-    geolocator.controller.debug:
-        class: GeolocatorBundle\Controller\GeolocatorDebugController
+    GeolocatorBundle\Controller\GeolocatorDebugController:
         arguments:
             $geolocator: '@geolocator.service'
             $enabled: '%geolocator.enabled%'
             $simulate: '%geolocator.simulate%'
             $redirectOnBan: '%geolocator.redirect_on_ban%'
         tags: ['controller.service_arguments']
+        public: true
+
+    # Alias pour compatibilité
+    geolocator.controller.debug:
+        alias: GeolocatorBundle\Controller\GeolocatorDebugController
+        public: true
