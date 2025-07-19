@@ -25,7 +25,7 @@ class LocalProvider extends AbstractProvider
      */
     public function getGeoLocation(string $ip): GeoLocation
     {
-        $this->logger->debug("LocalProvider: Géolocalisation de l'IP {$ip}");
+        $this->logger->warning("***** LocalProvider: Géolocalisation de l'IP {$ip} *****");
 
         // Information de base sans API externe
         $data = [

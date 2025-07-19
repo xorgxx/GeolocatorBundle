@@ -51,6 +51,7 @@ services:
         arguments:
             $httpClient: '@http_client'
             $config: { }
+            $logger: '@monolog.logger.geolocator'
         tags:
             - { name: 'geolocator.provider', alias: 'local' }
 
@@ -145,7 +146,7 @@ services:
         class: Monolog\Handler\StreamHandler
         arguments:
             - '%kernel.logs_dir%/geolocator.log'
-            - 'warning' # Niveau par défaut
+            - 'debug' # Niveau plus détaillé pour voir tous les logs
 
     # Service de résolution d'IP sécurisé
     geolocator.ip_resolver:
