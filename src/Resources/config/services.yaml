@@ -133,8 +133,7 @@ services:
             $geolocator: '@geolocator.service'
             $enabled: '%geolocator.profiler.enabled%'
         tags:
-            - { name : data_collector, template : '@Geolocator/Collector/geolocator.html.twig' }
-#            - { name: data_collector, template: '@!GeolocatorBundle/Resources/views/Collector/geolocator.html.twig', id: 'geolocator' }
+            - { name: data_collector, template: '@Geolocator/Collector/geolocator.html.twig', id: 'geolocator' }
 
     # Monolog handler
     monolog.logger.geolocator:

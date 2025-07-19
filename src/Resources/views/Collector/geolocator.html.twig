@@ -1,14 +1,33 @@
 {% extends '@WebProfiler/Profiler/layout.html.twig' %}
 
 {% block toolbar %}
-    {% set icon %}🌍{% endset %}
+    {% set icon %}
+        <span class="icon">{{ include('@Geolocator/Icon/globe.svg') }}</span>
+    {% endset %}
+
     {% set text %}
-        IP: {{ collector.ip|default('N/A') }}
+        <div class="sf-toolbar-info-piece">
+            <b>IP</b>
+            <span>{{ collector.ip|default('N/A') }}</span>
+        </div>
         {% if collector.country %}
-            <br>Pays: {{ collector.country }}
+        <div class="sf-toolbar-info-piece">
+            <b>Pays</b>
+            <span>{{ collector.country }} {% if collector.countryName %} ({{ collector.countryName }}){% endif %}</span>
+        </div>
+        {% endif %}
+        {% if collector.providerUsed %}
+        <div class="sf-toolbar-info-piece">
+            <b>Provider</b>
+            <span>{{ collector.providerUsed }}</span>
+        </div>
         {% endif %}
     {% endset %}
-    {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { link: profiler_url }) }}
+
+    {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { 
+        link: profiler_url,
+        status: collector.isBanned ? 'red' : (collector.isVpn ? 'yellow' : '') 
+    }) }}
 {% endblock %}
 
 {% block menu %}
@@ -18,9 +37,7 @@
     </span>
 {% endblock %}
 
-{% block panel %}
-    <h2>Geolocator Debug</h2>
-
+{% block summary %}
     <div class="metrics">
         <div class="metric">
             <span class="value">{{ collector.ip|default('N/A') }}</span>

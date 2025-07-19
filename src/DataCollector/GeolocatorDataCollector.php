@@ -94,7 +94,7 @@ class GeolocatorDataCollector extends DataCollector
 
     public function getName(): string
     {
-        return 'data_collector';
+        return 'geolocator';
     }
 
     public static function getTemplate(): ?string
