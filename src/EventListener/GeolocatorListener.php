@@ -53,23 +53,34 @@ class GeolocatorListener
         }
     }
 
-    /**
-     * Vérifie si une route doit être ignorée selon les patterns configurés
-     */
     private function isRouteIgnored(string $route): bool
     {
         foreach ($this->ignoredRoutes as $pattern) {
-            // Support des jokers (*) dans les patterns
-            if (str_contains($pattern, '*')) {
-                $regex = '/^' . str_replace('*', '.*', $pattern) . '$/i';
-                if (preg_match($regex, $route)) {
-                    return true;
-                }
-            } elseif ($route === $pattern) {
+            if (fnmatch($pattern, $route, FNM_CASEFOLD)) {
                 return true;
             }
         }
-
         return false;
     }
+
+    /**
+     * Vérifie si une route doit être ignorée selon les patterns configurés
+     */
+//    private function isRouteIgnored(string $route): bool
+//    {
+//
+//        foreach ($this->ignoredRoutes as $pattern) {
+//            // Support des jokers (*) dans les patterns
+//            if (str_contains($pattern, '*')) {
+//                $regex = '/^' . str_replace('*', '.*', $pattern) . '$/i';
+//                if (preg_match($regex, $route)) {
+//                    return true;
+//                }
+//            } elseif ($route === $pattern) {
+//                return true;
+//            }
+//        }
+//
+//        return false;
+//    }
 }

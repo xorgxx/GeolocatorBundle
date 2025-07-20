@@ -38,20 +38,24 @@ class GeolocatorExtension extends Extension
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
+        // set key config as container parameters
+        foreach ($config as $key => $value) {
+            $container->setParameter('geolocator.'.$key, $value);
+        }
         // Définir les paramètres de configuration AVANT de charger les services
         $container->setParameter('geolocator.config', $config);
-        $container->setParameter('geolocator.enabled', $config['enabled']);
-        $container->setParameter('geolocator.providers', $config['providers']);
-        $container->setParameter('geolocator.storage', $config['storage']);
-        $container->setParameter('geolocator.bans', $config['bans']);
-        $container->setParameter('geolocator.country_filters', $config['country_filters']);
-        $container->setParameter('geolocator.ip_filters', $config['ip_filters']);
-        $container->setParameter('geolocator.provider_fallback_mode', false); // Par défaut, désactivé
-        $container->setParameter('geolocator.vpn_detection', $config['vpn_detection']);
-        $container->setParameter('geolocator.crawler_filter', $config['crawler_filter']);
-        $container->setParameter('geolocator.redirect_on_ban', $config['redirect_on_ban']);
-        $container->setParameter('geolocator.simulate', $config['simulate']);
-        $container->setParameter('geolocator.ignored_routes', $config['ignored_routes']);
+//        $container->setParameter('geolocator.enabled', $config['enabled']);
+//        $container->setParameter('geolocator.providers', $config['providers']);
+//        $container->setParameter('geolocator.storage', $config['storage']);
+//        $container->setParameter('geolocator.bans', $config['bans']);
+//        $container->setParameter('geolocator.country_filters', $config['country_filters']);
+//        $container->setParameter('geolocator.ip_filters', $config['ip_filters']);
+//        $container->setParameter('geolocator.provider_fallback_mode', false); // Par défaut, désactivé
+//        $container->setParameter('geolocator.vpn_detection', $config['vpn_detection']);
+//        $container->setParameter('geolocator.crawler_filter', $config['crawler_filter']);
+//        $container->setParameter('geolocator.redirect_on_ban', $config['redirect_on_ban']);
+//        $container->setParameter('geolocator.simulate', $config['simulate']);
+//        $container->setParameter('geolocator.ignored_routes', $config['ignored_routes']);
         $container->setParameter('geolocator.profiler.enabled', $config['profiler']['enabled']);
 
 
@@ -169,7 +173,7 @@ class GeolocatorExtension extends Extension
         if (empty($enabledProviders)) {
             // Activer automatiquement le provider interne en mode de secours
             $container->setParameter('geolocator.provider_fallback_mode', true);
-            $container->setParameter('geolocator.providers.enabled', ['local']);
+//            $container->setParameter('geolocator.providers.enabled', ['local']);
             $container->setParameter('geolocator.providers.default', 'local');
             $container->setParameter('geolocator.providers.fallback', []);
 

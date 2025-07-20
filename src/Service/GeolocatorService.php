@@ -114,7 +114,7 @@ class GeolocatorService
             if ($this->vpnDetector->isVpn($ip, $geoLocation)) {
                 return $this->handleBan($ip, 'VPN/Proxy detected', $geoLocation);
             }
-
+            
             // La requête est autorisée
             $result = new BanResult(false, 'Request allowed', $ip, $geoLocation);
             $this->dispatchEvent('request.allowed', $result);

@@ -38,6 +38,14 @@ services:
         tags:
             - { name: 'geolocator.provider', alias: 'ipwhois' }
 
+    geolocator.provider.findip:
+        class: GeolocatorBundle\Provider\FindipProvider
+        arguments:
+            $httpClient: '@http_client'
+            $config: '%geolocator.providers.list.findip%'
+        tags:
+            - { name: 'geolocator.provider', alias: 'findip' }
+        
     geolocator.provider.ipqualityscore:
         class: GeolocatorBundle\Provider\IpqualityscoreProvider
         arguments:
@@ -45,7 +53,7 @@ services:
             $config: '%geolocator.providers.list.ipqualityscore%'
         tags:
             - { name: 'geolocator.provider', alias: 'ipqualityscore' }
-            
+
     geolocator.provider.local:
         class: GeolocatorBundle\Provider\LocalProvider
         arguments:
@@ -145,8 +153,10 @@ services:
     geolocator.ip_resolver:
         class: GeolocatorBundle\Service\IpResolver
         arguments:
-            $trustedHeaders: '%geolocator.ip_filters%'
-#            $trustedProxies: '%geolocator.trusted_proxies%'
+            $trustedHeaders: '%geolocator.ip_filter_flags%'
+            $trustedProxies: '%geolocator.trusted_proxies%'
+            $environment: '%kernel.environment%'
+
 
     # HTTP Client service pour les appels API
     http_client:

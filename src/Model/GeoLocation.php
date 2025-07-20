@@ -33,6 +33,12 @@ class GeoLocation
 
     private function populateFromRawData(array $data): void
     {
+        // Détection automatique du format et normalisation
+        if (isset($data['country']['iso_code'])) {
+            // Format GeoIP2/MaxMind - conversion vers format simple
+            $data = $this->normalizeGeoIP2Format($data) + $data;
+        }
+
         // Mappings de noms de champs communs dans différentes API
         $countryCodeFields = ['country_code', 'countryCode', 'country'];
         $countryNameFields = ['country_name', 'countryName', 'country'];
@@ -74,6 +80,78 @@ class GeoLocation
         $this->timezone = $findValue($timezoneFields);
     }
 
+    /**
+     * Convertit le format GeoIP2 complexe en format simple compatible
+     */
+    private function normalizeGeoIP2Format(array $data): array
+    {
+        $normalized = [];
+
+        // Code pays
+        if (isset($data['country']['iso_code'])) {
+            $normalized['country_code'] = $data['country']['iso_code'];
+        }
+
+        // Nom du pays (priorité français puis anglais)
+        if (isset($data['country']['names'])) {
+            $normalized['country_name'] = $data['country']['names']['fr']
+                ?? $data['country']['names']['en']
+                ?? reset($data['country']['names']);
+        }
+
+        // Ville (priorité français puis anglais)
+        if (isset($data['city']['names'])) {
+            $normalized['city'] = $data['city']['names']['fr']
+                ?? $data['city']['names']['en']
+                ?? reset($data['city']['names']);
+        }
+
+        // Région/État (premier subdivision)
+        if (isset($data['subdivisions'][0]['names'])) {
+            $normalized['region_name'] = $data['subdivisions'][0]['names']['fr']
+                ?? $data['subdivisions'][0]['names']['en']
+                ?? reset($data['subdivisions'][0]['names']);
+        }
+
+        // Coordonnées géographiques
+        if (isset($data['location']['latitude'])) {
+            $normalized['latitude'] = $data['location']['latitude'];
+        }
+        if (isset($data['location']['longitude'])) {
+            $normalized['longitude'] = $data['location']['longitude'];
+        }
+
+        // Fuseau horaire
+        if (isset($data['location']['time_zone'])) {
+            $normalized['timezone'] = $data['location']['time_zone'];
+        }
+
+        // Informations réseau
+        if (isset($data['traits']['isp'])) {
+            $normalized['isp'] = $data['traits']['isp'];
+        }
+        if (isset($data['traits']['organization'])) {
+            $normalized['org'] = $data['traits']['organization'];
+        }
+        if (isset($data['traits']['autonomous_system_number'])) {
+            $normalized['asn'] = (string) $data['traits']['autonomous_system_number'];
+        }
+
+        // Flags de sécurité
+        if (isset($data['is_vpn'])) {
+            $normalized['is_vpn'] = $data['is_vpn'];
+        }
+        if (isset($data['is_proxy'])) {
+            $normalized['is_proxy'] = $data['is_proxy'];
+        }
+        if (isset($data['is_tor'])) {
+            $normalized['is_tor'] = $data['is_tor'];
+        }
+
+        return $normalized;
+    }
+
+    // Tous les getters et setters restent identiques...
     public function getIp(): string
     {
         return $this->ip;

@@ -33,8 +33,8 @@ geolocator:
               apikey         : '%env(IPQUALITYSCORE_APIKEY)%'
               timeout        : 5
               retry_attempts : 2
-      
-      
+
+
       fallback : [ 'ipwhois', 'ipapi' ]
 
   storage              :
@@ -96,10 +96,10 @@ geolocator:
 
   # Routes à ignorer (ne seront pas vérifiées par le géolocateur)
   ignored_routes       :
-    - '_wdt'
-    - '_profiler'
-    - '_profiler_*'    # Utilisation du joker pour toutes les routes du profiler
-    - 'symfony_*'      # Routes internes de Symfony
-    - 'api_doc*'       # Documentation API (si vous utilisez NelmioApiDocBundle)
-    - 'fos_js_*'       # Routes FOSJsRoutingBundle
+      - '_wdt*'          # Toutes les routes Web Debug Toolbar
+      - '_profiler*'     # Toutes les routes Profiler
+      - 'symfony_*'      # Routes internes Symfony
+      - 'api_doc*'
+      - 'fos_js_*'
+
 
