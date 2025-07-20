@@ -17,9 +17,8 @@ class SecuredController extends AbstractController
 {
     /**
      * Cette action hérite des règles GeoFilter de la classe.
-     * 
-     * @Route("/secured-action", name="demo_secured_action")
      */
+    #[Route('/secured-action', name: 'demo_secured_action')]
     public function securedAction(): Response
     {
         return new Response(
@@ -29,9 +28,8 @@ class SecuredController extends AbstractController
 
     /**
      * Cette action a ses propres règles qui remplacent celles de la classe.
-     * 
-     * @Route("/very-secured-action", name="demo_very_secured_action")
      */
+    #[Route('/very-secured-action', name: 'demo_very_secured_action')]
     #[GeoFilter(allowedCountries: ['FR'], allowedRanges: ['127.0.0.1/32'], blockCrawlers: true)]
     public function verySecuredAction(): Response
     {
@@ -42,9 +40,8 @@ class SecuredController extends AbstractController
 
     /**
      * Cette action n'a pas de règles GeoFilter spécifiques.
-     * 
-     * @Route("/open-action", name="demo_open_action")
      */
+    #[Route('/open-action', name: 'demo_open_action')]
     public function openAction(): Response
     {
         return new Response(

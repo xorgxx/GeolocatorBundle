@@ -6,14 +6,14 @@ use GeolocatorBundle\Service\BanManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 class GeolocatorController extends AbstractController
 {
     /**
      * Page affichée lorsqu'un utilisateur est banni.
-     * @Route("/banned", name="geolocator_banned")
      */
+    #[Route('/banned', name: 'geolocator_banned')]
     public function bannedAction(Request $request, BanManager $banManager): Response
     {
         $ip = $request->getClientIp();
