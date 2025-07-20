@@ -92,9 +92,7 @@ class GeolocatorService
 
                 if ($detectionResult['isCrawler']) {
                     $allowKnown = $this->config['crawler_filter']['allow_known'] ?? false;
-                    $shouldBlock = $detectionResult['isKnown']
-                        ? !$allowKnown
-                        : true; // Par défaut, bloquer les crawlers non connus
+                    $shouldBlock = !$detectionResult[ 'isKnown' ] || !$allowKnown; // Par défaut, bloquer les crawlers non connus
 
                     if ($shouldBlock) {
                         $crawlerName = $detectionResult['name'] ?? '';
@@ -108,6 +106,11 @@ class GeolocatorService
             if (!$this->countryFilter->isAllowed($geoLocation->getCountryCode())) {
                 $isPermanent = $this->countryFilter->isPermanentlyBanned($geoLocation->getCountryCode());
                 return $this->handleBan($ip, 'Country blocked: ' . $geoLocation->getCountryCode(), $geoLocation, $isPermanent);
+            }
+
+            // Filtrer par IP
+            if (!$this->ipFilter->isAllowed($ip)) {
+                return $this->handleBan($ip, 'IP blocked', $geoLocation);
             }
 
             // Détecter VPN
