@@ -1,0 +1,3 @@
+geolocator:
+    resource: '@GeolocatorBundle/Controller/'
+    type: attribute

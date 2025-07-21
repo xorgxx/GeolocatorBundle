@@ -1,0 +1,212 @@
+{% extends '@WebProfiler/Profiler/layout.html.twig' %}
+
+{% block toolbar %}
+    {% set icon %}
+        <span class="icon">🌍</span>
+    {% endset %}
+
+    {% set text %}
+        <div class="sf-toolbar-info-piece">
+            <b>IP</b>
+            <span>{{ collector.ip|default('N/A') }}</span>
+        </div>
+    {% endset %}
+
+    {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { 
+        link: true,
+        name: 'geolocator'
+    }) }}
+{% endblock %}
+
+{% block menu %}
+    <span class="label">
+        <span class="icon">🌍</span>
+        <strong>Geolocator</strong>
+    </span>
+{% endblock %}
+
+{% block summary %}
+    <div class="metrics">
+        <div class="metric">
+            <span class="value">{{ collector.ip|default('N/A') }}</span>
+            <span class="label">IP</span>
+        </div>
+        {% if collector.country %}
+            <div class="metric">
+                <span class="value">{{ collector.country }}</span>
+                <span class="label">Pays</span>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if collector.error %}
+        <div class="empty">
+            <p>Erreur: {{ collector.error }}</p>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block panel %}
+    <h2>Geolocator Debug</h2>
+
+    {% if not collector.isEnabled %}
+        <div class="empty">
+            <p>Le bundle Geolocator n'est pas activé.</p>
+        </div>
+        {{ return }}
+    {% endif %}
+
+    {% if collector.error %}
+        <div class="empty">
+            <p class="help">Une erreur s'est produite lors de la collecte des données :</p>
+            <pre>{{ collector.error }}</pre>
+        </div>
+    {% endif %}
+
+    <div class="metrics">
+        <div class="metric">
+            <span class="value">{{ collector.ip|default('N/A') }}</span>
+            <span class="label">IP Client</span>
+        </div>
+        {% if collector.providerUsed %}
+            <div class="metric">
+                <span class="value">{{ collector.providerUsed }}</span>
+                <span class="label">Provider utilisé</span>
+            </div>
+        {% endif %}
+        <div class="metric">
+            <span class="value label-status-{{ collector.isBanned ? 'error' : 'success' }}">
+                {{ collector.isBanned ? 'Oui' : 'Non' }}
+            </span>
+            <span class="label">IP Bannie</span>
+        </div>
+        <div class="metric">
+            <span class="value label-status-{{ collector.isVpn ? 'error' : 'success' }}">
+                {{ collector.isVpn ? 'Oui' : 'Non' }}
+            </span>
+            <span class="label">VPN détecté</span>
+        </div>
+    </div>
+
+    {% if collector.geoLocation %}
+        <h3>Informations de géolocalisation</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Propriété</th>
+                <th>Valeur</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% if collector.geoLocation.country_code %}
+                <tr>
+                    <td>Pays</td>
+                    <td>
+                        <strong>{{ collector.geoLocation.country_code }}</strong>
+                        {% if collector.geoLocation.country_name %}
+                            - {{ collector.geoLocation.country_name }}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endif %}
+            {% if collector.geoLocation.city %}
+                <tr>
+                    <td>Ville</td>
+                    <td>{{ collector.geoLocation.city }}</td>
+                </tr>
+            {% endif %}
+            {% if collector.geoLocation.region %}
+                <tr>
+                    <td>Région</td>
+                    <td>{{ collector.geoLocation.region }}</td>
+                </tr>
+            {% endif %}
+            {% if collector.geoLocation.latitude and collector.geoLocation.longitude %}
+                <tr>
+                    <td>Coordonnées</td>
+                    <td>{{ collector.geoLocation.latitude }}, {{ collector.geoLocation.longitude }}</td>
+                </tr>
+            {% endif %}
+            {% if collector.geoLocation.timezone %}
+                <tr>
+                    <td>Fuseau horaire</td>
+                    <td>{{ collector.geoLocation.timezone }}</td>
+                </tr>
+            {% endif %}
+            {% if collector.geoLocation.isp %}
+                <tr>
+                    <td>FAI</td>
+                    <td>{{ collector.geoLocation.isp }}</td>
+                </tr>
+            {% endif %}
+            <tr>
+                <td>VPN</td>
+                <td>
+                        <span class="label label-status-{{ collector.geoLocation.is_vpn ? 'error' : 'success' }}">
+                            {{ collector.geoLocation.is_vpn ? 'Détecté' : 'Non détecté' }}
+                        </span>
+                </td>
+            </tr>
+            {% if collector.geoLocation.provider %}
+                <tr>
+                    <td>Provider</td>
+                    <td>{{ collector.geoLocation.provider }}</td>
+                </tr>
+            {% endif %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty">
+            <p>Aucune information de géolocalisation disponible pour cette IP.</p>
+        </div>
+    {% endif %}
+
+    <h3>Filtres et contrôles</h3>
+    <table>
+        <thead>
+        <tr>
+            <th>Filtre</th>
+            <th>Statut</th>
+            <th>Description</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>IP bannie</td>
+            <td>
+                    <span class="label label-status-{{ collector.isBanned ? 'error' : 'success' }}">
+                        {{ collector.isBanned ? 'Oui' : 'Non' }}
+                    </span>
+            </td>
+            <td>{{ collector.isBanned ? 'Cette IP est dans la liste des bannissements' : 'IP autorisée' }}</td>
+        </tr>
+        <tr>
+            <td>Crawler</td>
+            <td>
+                    <span class="label label-status-{{ collector.isCrawler ? 'warning' : 'success' }}">
+                        {{ collector.isCrawler ? 'Détecté' : 'Non détecté' }}
+                    </span>
+            </td>
+            <td>{{ collector.isCrawler ? 'User-Agent identifié comme crawler' : 'User-Agent normal' }}</td>
+        </tr>
+        <tr>
+            <td>VPN</td>
+            <td>
+                    <span class="label label-status-{{ collector.isVpn ? 'error' : 'success' }}">
+                        {{ collector.isVpn ? 'Détecté' : 'Non détecté' }}
+                    </span>
+            </td>
+            <td>{{ collector.isVpn ? 'Connexion via VPN/Proxy détectée' : 'Connexion directe' }}</td>
+        </tr>
+        <tr>
+            <td>Mode simulation</td>
+            <td>
+                    <span class="label label-status-{{ collector.isSimulationMode ? 'warning' : 'success' }}">
+                        {{ collector.isSimulationMode ? 'Actif' : 'Inactif' }}
+                    </span>
+            </td>
+            <td>{{ collector.isSimulationMode ? 'Les actions sont simulées' : 'Mode production' }}</td>
+        </tr>
+        </tbody>
+    </table>
+{% endblock %}

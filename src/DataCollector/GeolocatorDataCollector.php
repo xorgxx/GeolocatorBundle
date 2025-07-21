@@ -98,7 +98,7 @@ class GeolocatorDataCollector extends DataCollector
 
     public function getName(): string
     {
-        return 'geolocator';
+        return 'geolocatorNeox';
     }
 
     public static function getTemplate(): ?string
@@ -115,7 +115,7 @@ class GeolocatorDataCollector extends DataCollector
     {
         return $this->data['acceptable_content_types'];
     }
-    
+
     public function reset(): void
     {
         $this->data = [];

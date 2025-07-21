@@ -6,7 +6,7 @@ services:
             $geolocator: '@geolocator.service'
             $enabled: '%geolocator.profiler.enabled%'
         tags:
-            - { name: data_collector, template: '@Geolocator/data_collector/template.html.twig', id: GeolocatorBundle\DataCollector\GeolocatorDataCollector }
+            - { name: data_collector, template: "@Geolocator/data_collector/template.html.twig", id: "geolocatorNeox" }
         public: true
 
     # Alias du data collector

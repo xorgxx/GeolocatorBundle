@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geolocator Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 { color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        h2 { color: #3498db; margin-top: 30px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
+        th { background-color: #f2f2f2; }
+        .success { color: #27ae60; }
+        .error { color: #e74c3c; }
+        .warning { color: #f39c12; }
+        .code { font-family: monospace; background: #f8f8f8; padding: 2px 5px; border-radius: 3px; }
+        .card { border: 1px solid #ddd; border-radius: 4px; padding: 20px; margin-bottom: 20px; }
+        .card h3 { margin-top: 0; color: #2c3e50; }
+    </style>
+</head>
+<body>
+    <h1>Geolocator Debug</h1>
+
+    <div class="card">
+        <h3>État général</h3>
+        <table>
+            <tr>
+                <th>Bundle activé</th>
+                <td>
+                    {% if enabled %}
+                        <span class="success">Oui</span>
+                    {% else %}
+                        <span class="error">Non</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Mode simulation</th>
+                <td>
+                    {% if simulate %}
+                        <span class="warning">Oui</span>
+                    {% else %}
+                        <span class="success">Non</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>URL de redirection</th>
+                <td><span class="code">{{ redirect_on_ban }}</span></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>Profiler</h3>
+        <table>
+            <tr>
+                <th>Profiler activé</th>
+                <td>
+                    {% if profiler_enabled %}
+                        <span class="success">Oui</span>
+                    {% else %}
+                        <span class="error">Non</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>DataCollector chargé</th>
+                <td>
+                    {% if data_collector_loaded %}
+                        <span class="success">Oui</span>
+                    {% else %}
+                        <span class="error">Non</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Service geolocator.service</th>
+                <td>
+                    {% if service_check %}
+                        <span class="success">Disponible</span>
+                    {% else %}
+                        <span class="error">Non disponible</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Service data_collector.geolocator</th>
+                <td>
+                    {% if data_collector_check %}
+                        <span class="success">Disponible</span>
+                    {% else %}
+                        <span class="error">Non disponible</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>Informations de géolocalisation</h3>
+        <table>
+            <tr>
+                <th>IP détectée</th>
+                <td><span class="code">{{ ip }}</span></td>
+            </tr>
+            {% if geoLocation %}
+                <tr>
+                    <th>Pays</th>
+                    <td>
+                        {{ geoLocation.countryCode }}
+                        {% if geoLocation.countryName %}
+                            ({{ geoLocation.countryName }})
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Ville</th>
+                    <td>{{ geoLocation.city|default('Non disponible') }}</td>
+                </tr>
+                <tr>
+                    <th>Région</th>
+                    <td>{{ geoLocation.region|default('Non disponible') }}</td>
+                </tr>
+                <tr>
+                    <th>Coordonnées</th>
+                    <td>
+                        {% if geoLocation.latitude and geoLocation.longitude %}
+                            {{ geoLocation.latitude }}, {{ geoLocation.longitude }}
+                        {% else %}
+                            Non disponible
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>VPN détecté</th>
+                    <td>
+                        {% if geoLocation.isVpn %}
+                            <span class="error">Oui</span>
+                        {% else %}
+                            <span class="success">Non</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Provider utilisé</th>
+                    <td>{{ geoLocation.provider|default('Non disponible') }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="2" class="error">Aucune information de géolocalisation disponible</td>
+                </tr>
+            {% endif %}
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>Statut de bannissement</h3>
+        <table>
+            <tr>
+                <th>IP bannie</th>
+                <td>
+                    {% if is_banned %}
+                        <span class="error">Oui</span>
+                    {% else %}
+                        <span class="success">Non</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% if is_banned %}
+                <tr>
+                    <th>Raison</th>
+                    <td>{{ ban_reason }}</td>
+                </tr>
+            {% endif %}
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>Outils de débogage</h3>
+        <p>Pour tester avec différentes IP, utilisez l'en-tête HTTP <span class="code">X-Forwarded-For</span>:</p>
+        <pre>curl -H "X-Forwarded-For: 8.8.8.8" {{ app.request.schemeAndHttpHost }}/__geo/debug</pre>
+    </div>
+</body>
+</html>

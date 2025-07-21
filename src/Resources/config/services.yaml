@@ -1,20 +1,71 @@
+
 services:
     # default configuration for services in *this* file
-    _defaults:
-        autowire: true      # Automatically injects dependencies in your services.
-        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
-    
+#    _defaults:
+#        autowire: true      # Injecte automatiquement les dépendances
+#        autoconfigure: true # Enregistre automatiquement les services comme commandes, event subscribers, etc.
+#        public: false       # Les services ne sont pas publics par défaut
+
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
-    Twig\Extension\StringLoaderExtension:
-    
-    GeolocatorBundle\:
-        resource: '../../../src/'
-        exclude:
-            - '../../../src/DependencyInjection/'
-            - '../../../src/Entity/'
-            - '../../../src/Kernel.php'
-            
+#    Twig\Extension\StringLoaderExtension:
+
+#    GeolocatorBundle\:
+#        resource: '../../'
+#        exclude:
+#            - '../../src/DependencyInjection/'
+#            - '../../src/Entity/'
+#            - '../../src/Command/'
+#            - '../../src/Service/'
+#            - '../../src/Kernel.php'
+
+    # === CONTRÔLEURS EXPLICITES ===
+
+    # Contrôleur API de géolocalisation
+#    GeolocatorBundle\Controller\GeoApiController:
+#        arguments:
+#            $geolocator: '@GeolocatorBundle\Service\GeolocatorService'
+#            $banManager: '@GeolocatorBundle\Service\BanManager'
+#        tags:
+#            - { name: controller.service_arguments }
+
+#    # Contrôleur d'administration
+#    GeolocatorBundle\Controller\GeoAdminController:
+#        arguments:
+#            $banManager: '@GeolocatorBundle\Service\BanManager'
+#        tags:
+#            - { name: controller.service_arguments }
+
+    # Contrôleur de debug (si existant)
+    GeolocatorBundle\Controller\GeolocatorDebugController:
+        arguments:
+            $geolocator: '@geolocator.service'
+            $enabled: 'true'
+            $simulate: 'false'
+            $redirectOnBan: 'banned'
+        autowire      : true
+        autoconfigure : true
+        tags:
+            - { name: controller.service_arguments }
+    # make all your bundle’s controllers services
+
+    # Contrôleur principal de géolocalisation (si existant)
+    GeolocatorBundle\Controller\GeolocatorController:
+        arguments:
+            $geolocator: '@geolocator.service'
+            $banManager: '@geolocator.ban_manager'
+#        public: true
+        autowire: true
+        autoconfigure: true
+        tags:
+            - { name: controller.service_arguments }
+
+    # Contrôleur de démonstration sécurisé
+#    GeolocatorBundle\Controller\Demo\SecuredController:
+#        tags:
+#            - { name: controller.service_arguments }
+
+
     # Services principaux
     geolocator.service:
         class: GeolocatorBundle\Service\GeolocatorService
@@ -61,7 +112,7 @@ services:
             $config: '%geolocator.providers.list.findip%'
         tags:
             - { name: 'geolocator.provider', alias: 'findip' }
-        
+
     geolocator.provider.ipqualityscore:
         class: GeolocatorBundle\Provider\IpqualityscoreProvider
         arguments:
@@ -204,11 +255,11 @@ services:
         alias: GeolocatorBundle\Service\AsyncGeolocator
 
     # Contrôleur de base abstrait
-    geolocator.controller.base:
-        abstract: true
-        class: GeolocatorBundle\Controller\BaseGeolocatorController
-        arguments:
-            $geolocator: '@geolocator.service'
-            $enabled: '%geolocator.enabled%'
-            $simulate: '%geolocator.simulate%'
-            $redirectOnBan: '%geolocator.redirect_on_ban%'
+#    geolocator.controller.base:
+#        abstract: true
+#        class: GeolocatorBundle\Controller\BaseGeolocatorController
+#        arguments:
+#            $geolocator: '@geolocator.service'
+#            $enabled: '%geolocator.enabled%'
+#            $simulate: '%geolocator.simulate%'
+#            $redirectOnBan: '%geolocator.redirect_on_ban%'

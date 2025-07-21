@@ -14,8 +14,8 @@ class GeolocatorBundle extends Bundle
         parent::build($container);
 
         // Ajouter le compiler pass pour les services de configuration des providers
-//        $container->addCompilerPass(new ConfigProviderPass());
-//        $container->addCompilerPass(new GeolocatorCompilerPass());
+        $container->addCompilerPass(new ConfigProviderPass());
+        $container->addCompilerPass(new GeolocatorCompilerPass());
     }
 
     public function getPath(): string

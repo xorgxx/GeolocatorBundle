@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Accès refusé</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+        }
+        h1 {
+            color: #e74c3c;
+            margin-top: 0;
+        }
+        p {
+            margin: 1rem 0;
+            line-height: 1.5;
+        }
+        .info {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 1rem 0;
+            text-align: left;
+        }
+        .info p {
+            margin: 0.5rem 0;
+        }
+        .error-icon {
+            font-size: 4rem;
+            color: #e74c3c;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="error-icon">⛔</div>
+        <h1>Accès refusé</h1>
+
+        <p>Nous avons détecté une activité suspecte depuis votre adresse IP.</p>
+
+        <div class="info">
+            <p><strong>IP:</strong> {{ ip }}</p>
+
+            {% if ban_info %}
+                <p><strong>Raison:</strong> {{ ban_info.reason }}</p>
+
+                {% if is_permanent %}
+                    <p><strong>Type de blocage:</strong> <span style="color: #e74c3c;">Permanent</span></p>
+                {% else %}
+                    <p><strong>Type de blocage:</strong> Temporaire</p>
+                    <p><strong>Expire le:</strong> {{ expiration ? expiration|date('d/m/Y H:i:s') : 'Inconnu' }}</p>
+                {% endif %}
+            {% else %}
+                <p><strong>Raison:</strong> Activité suspecte détectée</p>
+            {% endif %}
+        </div>
+
+{#        <p>Si vous pensez qu'il s'agit d'une erreur, veuillez contacter l'administrateur du site.</p>#}
+    </div>
+</body>
+</html>
