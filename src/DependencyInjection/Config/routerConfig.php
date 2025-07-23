@@ -1,7 +1,6 @@
 <?php
 
-    namespace NeoxDashBoard\NeoxDashBoardBundle\DependencyInjection\Config;
-
+    namespace GeolocatorBundle\DependencyInjection\Config;
     class routerConfig
     {
         public static function getConfig(): array

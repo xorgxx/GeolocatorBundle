@@ -2,7 +2,7 @@
 
 namespace GeolocatorBundle\DependencyInjection;
 
-use NeoxDashBoard\NeoxDashBoardBundle\DependencyInjection\Config\routerConfig;
+use GeolocatorBundle\DependencyInjection\Config\routerConfig;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
@@ -128,6 +128,10 @@ class GeolocatorExtension extends Extension implements PrependExtensionInterface
         }
     }
 
+    public function prepend(ContainerBuilder $container): void
+    {
+        $this->prependConfigurations($container);
+    }
     private function prependConfigurations(ContainerBuilder $container): void
     {
         $configurations = [
