@@ -22,4 +22,11 @@ class GeolocatorBundle extends Bundle
     {
         return \dirname(__DIR__);
     }
+
+    public function configureRoutes(RoutingConfigurator $routes): void
+    {
+        // Charger automatiquement les routes depuis les contrôleurs
+        $routes->import('../Controller/', 'attribute');
+    }
+
 }
