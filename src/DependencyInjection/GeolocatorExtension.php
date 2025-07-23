@@ -2,12 +2,14 @@
 
 namespace GeolocatorBundle\DependencyInjection;
 
+use NeoxDashBoard\NeoxDashBoardBundle\DependencyInjection\Config\routerConfig;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 
-class GeolocatorExtension extends Extension
+class GeolocatorExtension extends Extension implements PrependExtensionInterface
 {
     /**
      * Charge la configuration du bundle et initialise les services.
@@ -44,18 +46,6 @@ class GeolocatorExtension extends Extension
         }
         // Définir les paramètres de configuration AVANT de charger les services
         $container->setParameter('geolocator.config', $config);
-//        $container->setParameter('geolocator.enabled', $config['enabled']);
-//        $container->setParameter('geolocator.providers', $config['providers']);
-//        $container->setParameter('geolocator.storage', $config['storage']);
-//        $container->setParameter('geolocator.bans', $config['bans']);
-//        $container->setParameter('geolocator.country_filters', $config['country_filters']);
-//        $container->setParameter('geolocator.ip_filters', $config['ip_filters']);
-//        $container->setParameter('geolocator.provider_fallback_mode', false); // Par défaut, désactivé
-//        $container->setParameter('geolocator.vpn_detection', $config['vpn_detection']);
-//        $container->setParameter('geolocator.crawler_filter', $config['crawler_filter']);
-//        $container->setParameter('geolocator.redirect_on_ban', $config['redirect_on_ban']);
-//        $container->setParameter('geolocator.simulate', $config['simulate']);
-//        $container->setParameter('geolocator.ignored_routes', $config['ignored_routes']);
         $container->setParameter('geolocator.profiler.enabled', $config['profiler']['enabled']);
 
 
@@ -138,6 +128,16 @@ class GeolocatorExtension extends Extension
         }
     }
 
+    private function prependConfigurations(ContainerBuilder $container): void
+    {
+        $configurations = [
+            'router'                   => routerConfig::getConfig(),
+        ];
+
+        foreach ($configurations as $extension => $config) {
+            $container->prependExtensionConfig($extension, $config);
+        }
+    }
     /**
      * Configure les providers de géolocalisation en fonction de la configuration.
      */
