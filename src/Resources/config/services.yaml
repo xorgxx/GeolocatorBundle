@@ -40,8 +40,8 @@ services:
     GeolocatorBundle\Controller\GeolocatorDebugController:
         arguments:
             $geolocator: '@geolocator.service'
-            $enabled: 'true'
-            $simulate: 'false'
+            $enabled: '@geolocator.enabled'
+            $simulate: '@geolocator.simulate'
             $redirectOnBan: 'banned'
         autowire      : true
         autoconfigure : true

@@ -1,0 +1,4 @@
+- **Filtrage par pays** : Bloquez ou autorisez uniquement certains pays
+- **Filtrage par IP** : Configurez des listes d'adresses IP autorisées et bloquées
+- **Détection de VPN/Proxy** : Identifiez et bloquez les utilisateurs utilisant des VPNs
+- **Filtrage des robots** : Identifiez automatiquement les robots et crawlers
