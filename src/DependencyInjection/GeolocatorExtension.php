@@ -65,7 +65,6 @@ class GeolocatorExtension extends Extension
         // Charger la configuration des services APRÈS avoir défini les paramètres
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yaml');
-        $loader->load('routes.yaml');
 
         // Charger des configurations additionnelles
         try {

@@ -1,4 +1,0 @@
-geolocator_debug:
-    path: /__geo/debug
-    controller: GeolocatorBundle\Controller\GeolocatorDebugController::debug
-    methods: [GET]

@@ -1,3 +1,0 @@
-geolocator:
-    resource: '@Geolocator/Controller/'
-    type: attribute
