@@ -1,0 +1,11 @@
+# Configuration principale des routes de l'application
+
+# Chargement des routes du bundle GeolocatorBundle
+geolocator_bundle:
+  resource: routes/geolocator.yaml
+
+# Chargement des routes spécifiques à l'environnement de développement
+when@dev:
+  dev_routes:
+    resource: routes/dev/
+    type: glob
